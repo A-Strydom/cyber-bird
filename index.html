@@ -2021,16 +2021,51 @@
     canvas.addEventListener('mouseleave', (e) => {
       mouseHeld = false;
     });
+    // Two-finger tap detection for pause/play
+    let twoFingerTapStartTime = 0;
+    let twoFingerTapStartTouches = 0;
+    
     canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      mouseHeld = true;
-      startJump();
+      // Check for two-finger tap
+      if (e.touches.length === 2) {
+        twoFingerTapStartTime = performance.now();
+        twoFingerTapStartTouches = 2;
+        e.preventDefault();
+        return;
+      }
+      
+      // Single touch - normal jump behavior
+      if (e.touches.length === 1 && twoFingerTapStartTouches !== 2) {
+        e.preventDefault();
+        mouseHeld = true;
+        startJump();
+      }
     }, { passive: false });
+    
     canvas.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      mouseHeld = false;
+      // Check if this was a two-finger tap
+      if (twoFingerTapStartTouches === 2 && e.touches.length === 0) {
+        const tapDuration = performance.now() - twoFingerTapStartTime;
+        // If both fingers lifted within 300ms, it's a tap (not a drag)
+        if (tapDuration < 300) {
+          e.preventDefault();
+          togglePause();
+        }
+        twoFingerTapStartTouches = 0;
+        twoFingerTapStartTime = 0;
+        return;
+      }
+      
+      // Single touch end
+      if (e.touches.length === 0) {
+        e.preventDefault();
+        mouseHeld = false;
+      }
     }, { passive: false });
+    
     canvas.addEventListener('touchcancel', (e) => {
+      twoFingerTapStartTouches = 0;
+      twoFingerTapStartTime = 0;
       mouseHeld = false;
     }, { passive: false });
 
