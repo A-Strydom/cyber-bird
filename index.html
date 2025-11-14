@@ -534,6 +534,8 @@
       align-items: center;
       z-index: 2000;
       backdrop-filter: blur(5px);
+      padding: 20px;
+      box-sizing: border-box;
     }
     .menu-modal.show {
       display: flex;
@@ -549,6 +551,8 @@
       box-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
       width: 90%;
       position: relative;
+      box-sizing: border-box;
+      margin: 0 auto;
     }
     .menu-section {
       margin-bottom: 40px;
@@ -861,6 +865,15 @@
       .start-instructions {
         font-size: 14px;
         padding: 0 20px;
+      }
+      .menu-modal {
+        padding: 15px;
+      }
+      .menu-content {
+        width: calc(100% - 30px);
+        max-width: calc(100% - 30px);
+        padding: 25px 20px;
+        max-height: calc(100vh - 30px);
       }
     }
     button {
