@@ -58,16 +58,11 @@
       line-height: 1.3;
       overflow: hidden;
       z-index: 1;
-      animation: scrollCode 20s linear infinite;
     }
     .code-stream::before {
       content: '0x1A2B\A 0x3C4D\A 0x5E6F\A 0x7890\A 0xABCD\A 0xEF01\A 0x2345\A 0x6789\A 0xFEDC\A 0xBA98\A 0x7654\A 0x3210\A 0x9ABC\A 0xDEF0\A 0x1234\A 0x5678\A 0x9ABC\A 0xDEF0\A 0x2468\A 0xACE0\A 0x1357\A 0x9BDF\A 0x0246\A 0x8ACE\A 0x1357\A 0x9BDF\A 0x2468\A 0xACE0\A 0x1357\A 0x9BDF';
       white-space: pre;
       display: block;
-    }
-    @keyframes scrollCode {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(-50%); }
     }
     .text-artifacts {
       position: fixed;
@@ -147,48 +142,99 @@
       line-height: 1;
       margin-left: 2px;
     }
-    .top-right-controls {
+    .top-controls {
       position: fixed;
-      top: 40px;
+      top: 20px;
       right: 80px;
       display: flex;
       align-items: center;
       gap: 15px;
       z-index: 100;
     }
+    .game-controls {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      z-index: 100;
+    }
     #restart {
-      background: rgba(10, 10, 30, 0.9);
+      background: transparent;
       color: #00f5ff;
       font-family: 'Share Tech Mono', monospace;
-      font-size: 14px;
-      padding: 7px 20px;
+      font-size: 28px;
+      width: 44px;
+      height: 44px;
+      padding: 0;
       cursor: pointer;
       text-shadow: 0 0 6px #00f5ff;
-      box-shadow: 0 0 8px rgba(255, 107, 53, 0.5);
       transition: all 0.2s ease;
-      text-transform: uppercase;
-      border: 1px solid #ff6b35;
+      border: none;
       outline: none;
-      position: relative;
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
+      line-height: 1;
     }
-    #restart::before {
-      content: '';
-      position: absolute;
-      left: 4px;
-      top: 0;
-      bottom: 0;
-      width: 1px;
-      background: #ff6b35;
-      pointer-events: none;
-      z-index: 1;
+    #restart .material-icons {
+      font-family: 'Material Icons';
+      font-size: 28px;
+      color: inherit;
+      line-height: 1;
+      display: inline-block;
     }
     #restart:hover {
-      background: rgba(10, 10, 30, 0.95);
-      box-shadow: 0 0 15px rgba(255, 107, 53, 0.8);
       text-shadow: 0 0 10px #00f5ff;
+      transform: scale(1.1);
+    }
+    #restart.glitch {
+      animation: glitch 0.3s ease-in-out;
+    }
+    @keyframes glitch {
+      0%, 100% {
+        transform: translate(0);
+        filter: hue-rotate(0deg);
+      }
+      10% {
+        transform: translate(-2px, 2px);
+        filter: hue-rotate(90deg);
+      }
+      20% {
+        transform: translate(-2px, -2px);
+        filter: hue-rotate(180deg);
+      }
+      30% {
+        transform: translate(2px, 2px);
+        filter: hue-rotate(270deg);
+      }
+      40% {
+        transform: translate(2px, -2px);
+        filter: hue-rotate(360deg);
+      }
+      50% {
+        transform: translate(-2px, 2px);
+        filter: hue-rotate(90deg);
+      }
+      60% {
+        transform: translate(-2px, -2px);
+        filter: hue-rotate(180deg);
+      }
+      70% {
+        transform: translate(2px, 2px);
+        filter: hue-rotate(270deg);
+      }
+      80% {
+        transform: translate(-2px, -2px);
+        filter: hue-rotate(360deg);
+      }
+      90% {
+        transform: translate(2px, 2px);
+        filter: hue-rotate(90deg);
+      }
     }
     #soundBtn {
       background: transparent;
@@ -257,8 +303,11 @@
     }
     #game-container {
       position: relative;
-      display: inline-block;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       z-index: 10;
+      margin-top: 80px;
     }
     canvas {
       background: rgba(10, 10, 30, 0.3);
@@ -267,21 +316,93 @@
       border-radius: 12px;
       display: block;
       touch-action: none;
+      transition: all 0.1s ease;
+    }
+    canvas.glitch {
+      animation: canvasGlitch 0.3s ease-in-out;
+    }
+    @keyframes canvasGlitch {
+      0%, 100% {
+        border-color: rgba(0, 245, 255, 0.75);
+        box-shadow: 0 0 20px rgba(0, 245, 255, 0.5), 0 0 40px rgba(255, 0, 255, 0.3), inset 0 0 12px rgba(0, 245, 255, 0.3);
+        filter: hue-rotate(0deg);
+      }
+      10% {
+        border-color: rgba(255, 235, 59, 0.9);
+        box-shadow: 0 0 30px rgba(255, 235, 59, 0.8), 0 0 50px rgba(255, 107, 53, 0.5), inset 0 0 15px rgba(255, 235, 59, 0.5);
+        filter: hue-rotate(90deg);
+      }
+      20% {
+        border-color: rgba(255, 107, 53, 0.9);
+        box-shadow: 0 0 25px rgba(255, 107, 53, 0.8), 0 0 45px rgba(0, 245, 255, 0.5), inset 0 0 18px rgba(255, 107, 53, 0.5);
+        filter: hue-rotate(180deg);
+      }
+      30% {
+        border-color: rgba(0, 245, 255, 0.9);
+        box-shadow: 0 0 35px rgba(0, 245, 255, 0.9), 0 0 55px rgba(255, 235, 59, 0.6), inset 0 0 20px rgba(0, 245, 255, 0.6);
+        filter: hue-rotate(270deg);
+      }
+      40% {
+        border-color: rgba(255, 235, 59, 0.9);
+        box-shadow: 0 0 30px rgba(255, 235, 59, 0.8), 0 0 50px rgba(255, 107, 53, 0.5), inset 0 0 15px rgba(255, 235, 59, 0.5);
+        filter: hue-rotate(360deg);
+      }
+      50% {
+        border-color: rgba(255, 107, 53, 0.9);
+        box-shadow: 0 0 25px rgba(255, 107, 53, 0.8), 0 0 45px rgba(0, 245, 255, 0.5), inset 0 0 18px rgba(255, 107, 53, 0.5);
+        filter: hue-rotate(90deg);
+      }
+      60% {
+        border-color: rgba(0, 245, 255, 0.9);
+        box-shadow: 0 0 35px rgba(0, 245, 255, 0.9), 0 0 55px rgba(255, 235, 59, 0.6), inset 0 0 20px rgba(0, 245, 255, 0.6);
+        filter: hue-rotate(180deg);
+      }
+      70% {
+        border-color: rgba(255, 235, 59, 0.9);
+        box-shadow: 0 0 30px rgba(255, 235, 59, 0.8), 0 0 50px rgba(255, 107, 53, 0.5), inset 0 0 15px rgba(255, 235, 59, 0.5);
+        filter: hue-rotate(270deg);
+      }
+      80% {
+        border-color: rgba(255, 107, 53, 0.9);
+        box-shadow: 0 0 25px rgba(255, 107, 53, 0.8), 0 0 45px rgba(0, 245, 255, 0.5), inset 0 0 18px rgba(255, 107, 53, 0.5);
+        filter: hue-rotate(360deg);
+      }
+      90% {
+        border-color: rgba(0, 245, 255, 0.9);
+        box-shadow: 0 0 35px rgba(0, 245, 255, 0.9), 0 0 55px rgba(255, 235, 59, 0.6), inset 0 0 20px rgba(0, 245, 255, 0.6);
+        filter: hue-rotate(90deg);
+      }
     }
     .score-display {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
+      position: relative;
       z-index: 20;
       text-align: center;
       pointer-events: none;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
     }
     .score-display strong {
       font-size: 32px;
       color: #00f5ff;
       text-shadow: 0 0 10px #00f5ff, 0 0 20px rgba(0, 245, 255, 0.5);
       font-family: 'Share Tech Mono', monospace;
+    }
+    .lives-display {
+      font-size: 14px;
+      color: #ff6b35;
+      text-shadow: 0 0 6px #ff6b35;
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .lives-display .material-icons {
+      font-family: 'Material Icons';
+      font-size: 16px;
+      color: inherit;
     }
     .high-score-system {
       position: fixed;
@@ -372,38 +493,33 @@
       text-shadow: 0 0 15px #ffeb3b;
     }
     #menuBtn {
-      background: rgba(10, 10, 30, 0.9);
+      background: transparent;
       color: #00f5ff;
       font-family: 'Share Tech Mono', monospace;
-      font-size: 14px;
-      padding: 7px 20px;
+      font-size: 28px;
+      width: 44px;
+      height: 44px;
+      padding: 0;
       cursor: pointer;
       text-shadow: 0 0 6px #00f5ff;
-      box-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
       transition: all 0.2s ease;
-      text-transform: uppercase;
-      border: 1px solid #00f5ff;
+      border: none;
       outline: none;
-      position: relative;
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
+      line-height: 1;
     }
-    #menuBtn::before {
-      content: '';
-      position: absolute;
-      left: 4px;
-      top: 0;
-      bottom: 0;
-      width: 1px;
-      background: #00f5ff;
-      pointer-events: none;
-      z-index: 1;
+    #menuBtn .material-icons {
+      font-family: 'Material Icons';
+      font-size: 28px;
+      color: inherit;
+      line-height: 1;
+      display: inline-block;
     }
     #menuBtn:hover {
-      background: rgba(10, 10, 30, 0.95);
-      box-shadow: 0 0 15px rgba(0, 245, 255, 0.8);
       text-shadow: 0 0 10px #00f5ff;
+      transform: scale(1.1);
     }
     .menu-modal {
       position: fixed;
@@ -432,6 +548,7 @@
       overflow-y: auto;
       box-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
       width: 90%;
+      position: relative;
     }
     .menu-section {
       margin-bottom: 40px;
@@ -449,6 +566,77 @@
       text-align: center;
       border-bottom: 1px solid rgba(0, 245, 255, 0.3);
       padding-bottom: 10px;
+    }
+    .menu-options {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .menu-option {
+      background: transparent;
+      border: 2px solid #00f5ff;
+      color: #00f5ff;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 18px;
+      padding: 20px 40px;
+      cursor: pointer;
+      text-shadow: 0 0 8px #00f5ff;
+      box-shadow: 0 0 15px #00f5ff;
+      transition: all 0.3s ease;
+      border-radius: 6px;
+      text-transform: uppercase;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .menu-option .material-icons {
+      font-family: 'Material Icons';
+      font-size: 24px;
+      color: inherit;
+      line-height: 1;
+      display: inline-block;
+    }
+    .menu-option:hover {
+      background: rgba(0, 245, 255, 0.1);
+      color: #ffeb3b;
+      border-color: #ffeb3b;
+      box-shadow: 0 0 25px #ffeb3b;
+      text-shadow: 0 0 15px #ffeb3b;
+      transform: scale(1.05);
+    }
+    .menu-screen {
+      display: none;
+      position: relative;
+    }
+    .menu-screen.active {
+      display: block;
+    }
+    .menu-back {
+      background: transparent;
+      border: 2px solid #00f5ff;
+      color: #00f5ff;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      padding: 8px 20px;
+      cursor: pointer;
+      text-shadow: 0 0 8px #00f5ff;
+      box-shadow: 0 0 10px #00f5ff;
+      transition: all 0.3s ease;
+      border-radius: 6px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .menu-back:hover {
+      background: rgba(0, 245, 255, 0.1);
+      color: #ffeb3b;
+      border-color: #ffeb3b;
+      box-shadow: 0 0 20px #ffeb3b;
+      text-shadow: 0 0 15px #ffeb3b;
     }
     .menu-text {
       font-size: 16px;
@@ -468,6 +656,7 @@
       justify-content: space-between;
       padding: 15px 0;
       border-bottom: 1px solid rgba(0, 245, 255, 0.2);
+      min-height: 50px;
     }
     .setting-item:last-child {
       border-bottom: none;
@@ -487,6 +676,8 @@
       border-radius: 15px;
       cursor: pointer;
       transition: all 0.3s ease;
+      flex-shrink: 0;
+      align-self: center;
     }
     .toggle-switch.active {
       background: rgba(0, 245, 255, 0.3);
@@ -495,7 +686,7 @@
     .toggle-switch::after {
       content: '';
       position: absolute;
-      top: 2px;
+      top: 50%;
       left: 2px;
       width: 22px;
       height: 22px;
@@ -503,34 +694,108 @@
       border-radius: 50%;
       transition: all 0.3s ease;
       box-shadow: 0 0 8px #00f5ff;
+      transform: translateY(-50%);
     }
     .toggle-switch.active::after {
       left: 32px;
       background: #ffeb3b;
       box-shadow: 0 0 8px #ffeb3b;
     }
-    .menu-close {
-      background: transparent;
+    .setting-input {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .setting-input input[type="number"] {
+      background: rgba(0, 0, 0, 0.5);
       border: 2px solid #00f5ff;
       color: #00f5ff;
       font-family: 'Share Tech Mono', monospace;
       font-size: 16px;
-      padding: 10px 30px;
+      padding: 8px 12px;
+      width: 80px;
+      text-align: center;
+      border-radius: 4px;
+      text-shadow: 0 0 6px #00f5ff;
+      box-shadow: 0 0 10px rgba(0, 245, 255, 0.3);
+    }
+    .setting-input input[type="number"]:focus {
+      outline: none;
+      border-color: #ffeb3b;
+      box-shadow: 0 0 15px rgba(255, 235, 59, 0.5);
+      color: #ffeb3b;
+    }
+    .reset-highscore {
+      background: transparent;
+      border: 2px solid #ff6b6b;
+      color: #ff6b6b;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      padding: 8px 20px;
       cursor: pointer;
-      text-shadow: 0 0 8px #00f5ff;
-      box-shadow: 0 0 15px #00f5ff;
+      text-shadow: 0 0 8px #ff6b6b;
+      box-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+      transition: all 0.3s ease;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .reset-highscore:hover {
+      background: rgba(255, 107, 107, 0.1);
+      color: #ffeb3b;
+      border-color: #ffeb3b;
+      box-shadow: 0 0 20px rgba(255, 235, 59, 0.5);
+      text-shadow: 0 0 15px #ffeb3b;
+    }
+    .reset-settings {
+      background: transparent;
+      border: 2px solid #ff6b6b;
+      color: #ff6b6b;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 16px;
+      padding: 12px 30px;
+      cursor: pointer;
+      text-shadow: 0 0 8px #ff6b6b;
+      box-shadow: 0 0 15px rgba(255, 107, 107, 0.3);
       transition: all 0.3s ease;
       border-radius: 6px;
       text-transform: uppercase;
       margin-top: 20px;
       width: 100%;
     }
+    .reset-settings:hover {
+      background: rgba(255, 107, 107, 0.1);
+      color: #ffeb3b;
+      border-color: #ffeb3b;
+      box-shadow: 0 0 25px rgba(255, 235, 59, 0.5);
+      text-shadow: 0 0 15px #ffeb3b;
+    }
+    .menu-close {
+      position: absolute;
+      top: -5px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: #00f5ff;
+      font-family: 'Material Icons';
+      font-size: 28px;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      cursor: pointer;
+      text-shadow: 0 0 8px #00f5ff;
+      transition: all 0.3s ease;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      z-index: 10;
+    }
     .menu-close:hover {
       background: rgba(0, 245, 255, 0.1);
       color: #ffeb3b;
-      border-color: #ffeb3b;
-      box-shadow: 0 0 25px #ffeb3b;
       text-shadow: 0 0 15px #ffeb3b;
+      transform: scale(1.1);
     }
     @media (max-width: 768px) {
       .game-title {
@@ -544,14 +809,30 @@
         font-size: 14px;
         letter-spacing: 2px;
       }
-      .top-right-controls {
-        top: 15px;
+      .top-controls {
+        top: 10px;
         right: 15px;
-        gap: 8px;
+        gap: 10px;
       }
-      #restart {
-        font-size: 11px;
-        padding: 8px 12px;
+      #menuBtn, #soundBtn {
+        width: 36px;
+        height: 36px;
+      }
+      #menuBtn .material-icons, #soundBtn .material-icons {
+        font-size: 24px;
+      }
+      #game-container {
+        margin-top: 60px;
+      }
+      .game-controls {
+        margin-bottom: 5px;
+      }
+      #restart, #pauseBtn, #menuBtn, #soundBtn {
+        width: 36px;
+        height: 36px;
+      }
+      #restart .material-icons, #pauseBtn .material-icons, #menuBtn .material-icons, #soundBtn .material-icons {
+        font-size: 24px;
       }
       .high-score-system {
         bottom: 15px;
@@ -601,20 +882,44 @@
   <div class="code-stream"></div>
   <div class="text-artifacts"></div>
   <div class="geometric-lines"></div>
-  <div class="top-right-controls">
-    <button id="restart" title="Restart">REBOOT<span class="material-icons">power_settings_new</span></button>
-    <button id="menuBtn" title="Menu">MENU<span class="material-icons">menu</span></button>
-    <button id="pauseBtn" title="Pause/Play"><span class="material-icons">pause</span></button>
+  <div class="top-controls">
     <button id="soundBtn" title="Toggle Sound"><span class="material-icons">volume_up</span></button>
+    <button id="menuBtn" title="Menu"><span class="material-icons">menu</span></button>
   </div>
   <div id="game-container">
-    <canvas id="game"></canvas>
-    <div class="score-display">
-      <strong id="score">0</strong>
+    <div class="game-controls">
+      <button id="restart" title="Restart"><span class="material-icons">power_settings_new</span></button>
+      <div class="score-display">
+        <strong id="score">0</strong>
+        <div class="lives-display">
+          <span class="material-icons">favorite</span>
+          <span id="livesDisplay">1</span>
+        </div>
+      </div>
+      <button id="pauseBtn" title="Pause/Play"><span class="material-icons">pause</span></button>
     </div>
+    <canvas id="game"></canvas>
     <div class="menu-modal" id="menuModal">
       <div class="menu-content">
-        <div class="menu-section">
+        <!-- Main Menu Screen -->
+        <div class="menu-screen active" id="mainMenuScreen">
+          <div class="menu-section-title">MENU</div>
+          <div class="menu-options">
+            <button class="menu-option" id="howToPlayBtn">
+              <span class="material-icons">help_outline</span>
+              <span>HOW TO PLAY</span>
+            </button>
+            <button class="menu-option" id="settingsBtn">
+              <span class="material-icons">settings</span>
+              <span>SETTINGS</span>
+            </button>
+          </div>
+          <button class="menu-close" id="menuClose"><span class="material-icons">close</span></button>
+        </div>
+
+        <!-- How to Play Screen -->
+        <div class="menu-screen" id="howToPlayScreen">
+          <button class="menu-back" id="backFromHowToPlay">← BACK</button>
           <div class="menu-section-title">HOW TO PLAY</div>
           <div class="menu-text">
             <strong>Objective:</strong> Fly through the neon cityscape and avoid obstacles!
@@ -637,14 +942,55 @@
             • Practice makes perfect!
           </div>
         </div>
-        <div class="menu-section">
+
+        <!-- Settings Screen -->
+        <div class="menu-screen" id="settingsScreen">
+          <button class="menu-back" id="backFromSettings">← BACK</button>
           <div class="menu-section-title">SETTINGS</div>
           <div class="setting-item">
             <span class="setting-label">Enable Pipes</span>
             <div class="toggle-switch active" id="pipesToggle"></div>
           </div>
+          <div class="setting-item">
+            <span class="setting-label">Pipe Spacing</span>
+            <div class="setting-input">
+              <input type="number" id="pipeSpacingInput" min="150" max="500" step="10" value="250">
+              <span style="color: #00f5ff; font-family: 'Share Tech Mono', monospace;">px</span>
+            </div>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">Pipe Gap</span>
+            <div class="setting-input">
+              <input type="number" id="pipeGapInput" min="100" max="300" step="10" value="180">
+              <span style="color: #00f5ff; font-family: 'Share Tech Mono', monospace;">px</span>
+            </div>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">Pipe Speed</span>
+            <div class="setting-input">
+              <input type="number" id="pipeSpeedInput" min="1" max="10" step="0.5" value="3">
+              <span style="color: #00f5ff; font-family: 'Share Tech Mono', monospace;">px/frame</span>
+            </div>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">Lives</span>
+            <div class="setting-input">
+              <input type="number" id="livesInput" min="1" max="10" step="1" value="1">
+            </div>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">Ghost Duration</span>
+            <div class="setting-input">
+              <input type="number" id="ghostDurationInput" min="500" max="5000" step="100" value="2000">
+              <span style="color: #00f5ff; font-family: 'Share Tech Mono', monospace;">ms</span>
+            </div>
+          </div>
+          <div class="setting-item" style="border-bottom: none; padding-bottom: 0;">
+            <span class="setting-label">High Score</span>
+            <button class="reset-highscore" id="resetHighscore">RESET</button>
+          </div>
+          <button class="reset-settings" id="resetSettings">RESET ALL SETTINGS</button>
         </div>
-        <button class="menu-close" id="menuClose">CLOSE</button>
       </div>
     </div>
     <div id="gameOver">
@@ -675,19 +1021,44 @@
     const menuModal = document.getElementById('menuModal');
     const menuClose = document.getElementById('menuClose');
     const pipesToggle = document.getElementById('pipesToggle');
+    const mainMenuScreen = document.getElementById('mainMenuScreen');
+    const howToPlayScreen = document.getElementById('howToPlayScreen');
+    const settingsScreen = document.getElementById('settingsScreen');
+    const howToPlayBtn = document.getElementById('howToPlayBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const backFromHowToPlay = document.getElementById('backFromHowToPlay');
+    const backFromSettings = document.getElementById('backFromSettings');
+    const pipeSpacingInput = document.getElementById('pipeSpacingInput');
+    const pipeGapInput = document.getElementById('pipeGapInput');
+    const pipeSpeedInput = document.getElementById('pipeSpeedInput');
+    const livesInput = document.getElementById('livesInput');
+    const livesDisplay = document.getElementById('livesDisplay');
+    const ghostDurationInput = document.getElementById('ghostDurationInput');
+    const resetSettingsBtn = document.getElementById('resetSettings');
+    const resetHighscoreBtn = document.getElementById('resetHighscore');
 
     // Game constants
     const GRAVITY = 0.5;
     const JUMP_STRENGTH = -8;
-    const PIPE_SPEED = 3;
-    const PIPE_GAP = 180;
-    const PIPE_SPACING = 250;
     const BIRD_SIZE = 30;
     const PIPE_WIDTH = 60;
+    
+    // Default pipe settings
+    const DEFAULT_PIPE_SPEED = 3;
+    const DEFAULT_PIPE_GAP = 180;
+    const DEFAULT_PIPE_SPACING = 250;
+    
+    // Pipe settings (can be changed in settings)
+    let pipeSpeed = DEFAULT_PIPE_SPEED;
+    let pipeGap = DEFAULT_PIPE_GAP;
+    let pipeSpacing = DEFAULT_PIPE_SPACING;
 
     // Game state
     let gameState = 'paused'; // 'paused', 'playing', 'gameover'
     let pipesEnabled = true; // Setting to enable/disable pipes
+    let maxLives = 1; // Default number of lives
+    let currentLives = 1; // Current lives remaining
+    let ghostDuration = 2000; // Default ghost duration in milliseconds (2 seconds)
     let bird = {
       x: 100,
       y: 250,
@@ -695,13 +1066,27 @@
       rotation: 0,
       wingAngle: 30,
       wingFlapping: false,
-      wingFlapDecay: 0
+      wingFlapDecay: 0,
+      glitching: false,
+      ghosting: false,
+      ghostEndTime: 0
     };
     let pipes = [];
     let score = 0;
-    let highscore = parseInt(localStorage.getItem('highscore')) || 0;
+    let highscore = 0;
+    const savedHighscore = localStorage.getItem('highscore');
+    if (savedHighscore !== null && !isNaN(parseInt(savedHighscore))) {
+      highscore = parseInt(savedHighscore);
+    }
     let frameCount = 0;
     let animationFrame = 0;
+    let lastTime = performance.now();
+    let backgroundOffset = 0; // Parallax offset for background
+    const PARALLAX_FACTOR = 0.4; // Background moves at 40% of pipe speed for parallax effect
+    let spaceHeld = false;
+    let mouseHeld = false;
+    let lastJumpTime = 0;
+    const JUMP_INTERVAL = 100; // milliseconds between jumps when held
 
     // Canvas setup
     function resizeCanvas() {
@@ -821,6 +1206,21 @@
             this.playTone(freq, 0.2, 'sawtooth', 0.3);
           }, index * 100);
         });
+      },
+      
+      async playReboot() {
+        await this.ensureResumed();
+        // Power-on glitch sound effect
+        this.playTone(200, 0.05, 'square', 0.2);
+        setTimeout(() => {
+          this.playTone(150, 0.05, 'square', 0.2);
+        }, 50);
+        setTimeout(() => {
+          this.playTone(250, 0.1, 'sawtooth', 0.25);
+        }, 100);
+        setTimeout(() => {
+          this.playTone(300, 0.15, 'sine', 0.3);
+        }, 200);
       }
     };
 
@@ -843,10 +1243,32 @@
     // Draw cyber bird
     function drawBird() {
       ctx.save();
-      ctx.translate(bird.x, bird.y);
-      ctx.rotate(bird.rotation);
+      
+      // Apply glitch effect if active
+      if (bird.glitching) {
+        const glitchOffsetX = (Math.random() - 0.5) * 4;
+        const glitchOffsetY = (Math.random() - 0.5) * 4;
+        ctx.translate(bird.x + glitchOffsetX, bird.y + glitchOffsetY);
+        ctx.rotate(bird.rotation + (Math.random() - 0.5) * 0.2);
+        ctx.filter = `hue-rotate(${Math.random() * 360}deg) brightness(${0.8 + Math.random() * 0.4})`;
+      } else {
+        ctx.translate(bird.x, bird.y);
+        ctx.rotate(bird.rotation);
+      }
+      
+      // Apply ghost effect (transparency) if ghosting
+      if (bird.ghosting) {
+        // Flicker effect for ghost mode - alternate between visible and transparent
+        const timeLeft = bird.ghostEndTime - performance.now();
+        const flickerRate = 200; // milliseconds per flicker
+        const flickerPhase = Math.floor(timeLeft / flickerRate) % 2;
+        ctx.globalAlpha = flickerPhase === 0 ? 0.3 : 0.6; // Flicker between 30% and 60% opacity
+      } else {
+        ctx.globalAlpha = 1.0;
+      }
 
       // Wing animation (continuously flapping when playing)
+      // Note: Wing animation is frame-based for smooth visual effect
       if (gameState === 'playing' || gameState === 'paused') {
         bird.wingAngle += 0.4;
       }
@@ -932,6 +1354,11 @@
       ctx.restore();
 
       ctx.restore();
+      // Reset filter and alpha after drawing
+      if (bird.glitching) {
+        ctx.filter = 'none';
+      }
+      ctx.globalAlpha = 1.0;
     }
 
     // Draw pipe
@@ -993,42 +1420,54 @@
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Moving stars (only when playing)
-      if (gameState === 'playing') {
-        ctx.fillStyle = '#00f5ff';
-        ctx.shadowColor = '#00f5ff';
-        ctx.shadowBlur = 5;
-        for (let i = 0; i < 50; i++) {
-          const x = (i * 37 + frameCount * 0.5) % canvas.width;
-          const y = (i * 73) % canvas.height;
-          const size = Math.sin(i + frameCount * 0.1) * 2 + 2;
+      // Parallax stars - use backgroundOffset for smooth parallax effect
+      ctx.fillStyle = '#00f5ff';
+      ctx.shadowColor = '#00f5ff';
+      ctx.shadowBlur = 5;
+      const wrapWidth = canvas.width + 100;
+      for (let i = 0; i < 50; i++) {
+        // Use backgroundOffset for parallax movement (wraps around canvas width)
+        // Subtract offset to make stars move left (matching pipe direction)
+        const baseX = (i * 37) % wrapWidth;
+        let x = baseX - backgroundOffset;
+        // Handle wrapping for negative values
+        while (x < 0) {
+          x += wrapWidth;
+        }
+        x = x % wrapWidth;
+        const y = (i * 73) % canvas.height;
+        // Only draw if visible on canvas
+        if (x >= -50 && x <= canvas.width + 50) {
+          const size = Math.sin(i + backgroundOffset * 0.01) * 2 + 2;
           ctx.beginPath();
           ctx.arc(x, y, size, 0, Math.PI * 2);
           ctx.fill();
         }
-        ctx.shadowBlur = 0;
-      } else {
-        // Static stars when paused
-        ctx.fillStyle = '#00f5ff';
-        ctx.shadowColor = '#00f5ff';
-        ctx.shadowBlur = 5;
-        for (let i = 0; i < 50; i++) {
-          const x = (i * 37) % canvas.width;
-          const y = (i * 73) % canvas.height;
-          const size = Math.sin(i) * 2 + 2;
-          ctx.beginPath();
-          ctx.arc(x, y, size, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.shadowBlur = 0;
       }
+      ctx.shadowBlur = 0;
     }
 
     // Game loop
-    function gameLoop() {
+    function gameLoop(currentTime) {
+      // Initialize time if not provided (first call)
+      if (!currentTime) {
+        currentTime = performance.now();
+      }
+      
+      // Calculate delta time for frame-rate independent movement
+      const deltaTime = Math.min((currentTime - lastTime) / 16.67, 2.0); // Cap at 2x normal speed
+      lastTime = currentTime;
+      
       // Only increment frameCount when playing (so background doesn't move when paused)
       if (gameState === 'playing') {
-        frameCount++;
+        frameCount += deltaTime;
+        // Update parallax background offset based on pipe speed
+        // Background moves slower than pipes for parallax effect
+        backgroundOffset += pipeSpeed * deltaTime * PARALLAX_FACTOR;
+        // Wrap around to prevent overflow (using a large wrap value)
+        if (backgroundOffset > canvas.width + 200) {
+          backgroundOffset = backgroundOffset % (canvas.width + 200);
+        }
       }
       animationFrame = requestAnimationFrame(gameLoop);
 
@@ -1039,17 +1478,40 @@
       drawBackground();
 
       if (gameState === 'playing') {
-        // Update bird
-        bird.velocity += GRAVITY;
-        bird.y += bird.velocity;
+        // Check if ghost mode should end
+        if (bird.ghosting && performance.now() >= bird.ghostEndTime) {
+          bird.ghosting = false;
+        }
+        
+        // Update bird (time-based)
+        // Apply jump at intervals if space/mouse is held
+        if (spaceHeld || mouseHeld) {
+          const timeSinceLastJump = currentTime - lastJumpTime;
+          if (timeSinceLastJump >= JUMP_INTERVAL) {
+            // Apply jump force at interval
+            bird.velocity = JUMP_STRENGTH;
+            lastJumpTime = currentTime;
+            SoundManager.playFlap();
+            // Trigger wing flapping animation
+            bird.wingFlapping = true;
+            bird.wingFlapDecay = 1.0;
+          } else {
+            // Apply gravity between jumps
+            bird.velocity += GRAVITY * deltaTime;
+          }
+        } else {
+          // Apply gravity when not held
+          bird.velocity += GRAVITY * deltaTime;
+        }
+        bird.y += bird.velocity * deltaTime;
         
         // Rotation based on velocity
         bird.rotation = Math.min(Math.max(bird.velocity * 0.1, -0.5), 0.5);
 
-        // Update pipes (only if enabled)
+        // Update pipes (only if enabled, time-based)
         if (pipesEnabled) {
           for (let i = pipes.length - 1; i >= 0; i--) {
-            pipes[i].x -= PIPE_SPEED;
+            pipes[i].x -= pipeSpeed * deltaTime;
 
             // Check if bird passed pipe
             if (!pipes[i].scored && pipes[i].x + PIPE_WIDTH < bird.x) {
@@ -1073,17 +1535,17 @@
             shouldSpawn = true;
           } else {
             const lastPipe = pipes[pipes.length - 1];
-            if (lastPipe.x <= canvas.width - PIPE_SPACING) {
+            if (lastPipe.x <= canvas.width - pipeSpacing) {
               shouldSpawn = true;
             }
           }
           
           if (shouldSpawn) {
-            const gapY = Math.random() * (canvas.height - PIPE_GAP - 100) + 50;
+            const gapY = Math.random() * (canvas.height - pipeGap - 100) + 50;
             pipes.push({
               x: canvas.width,
               topHeight: gapY,
-              bottomY: gapY + PIPE_GAP,
+              bottomY: gapY + pipeGap,
               scored: false
             });
           }
@@ -1100,9 +1562,9 @@
           });
         }
 
-        // Collision detection
-        if (bird.y < 0 || bird.y > canvas.height || 
-            (pipesEnabled && checkCollision(bird, pipes))) {
+        // Collision detection (skip if ghosting)
+        if (!bird.ghosting && (bird.y < 0 || bird.y > canvas.height || 
+            (pipesEnabled && checkCollision(bird, pipes)))) {
           gameOver();
         }
       } else if (gameState === 'paused') {
@@ -1117,20 +1579,15 @@
 
       // Draw bird
       drawBird();
-
-      // Draw score
-      ctx.fillStyle = '#00f5ff';
-      ctx.font = 'bold 32px "Share Tech Mono"';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#00f5ff';
-      ctx.shadowBlur = 10;
-      ctx.fillText(score, canvas.width / 2, 40);
-      ctx.shadowBlur = 0;
     }
 
     // Collision detection
     function checkCollision(bird, pipes) {
+      // Skip collision check if bird is ghosting (invulnerable)
+      if (bird.ghosting) {
+        return false;
+      }
+      
       const birdRadius = BIRD_SIZE * 0.6;
       
       for (let pipe of pipes) {
@@ -1157,7 +1614,7 @@
       scoreEl.textContent = score;
       if (score > highscore) {
         highscore = score;
-        localStorage.setItem('highscore', highscore);
+        localStorage.setItem('highscore', highscore.toString());
       }
       highscoreEl.textContent = highscore;
     }
@@ -1213,11 +1670,33 @@
     // Show menu modal
     function showMenu() {
       menuModal.classList.add('show');
+      showMainMenu();
     }
 
     // Hide menu modal
     function hideMenu() {
       menuModal.classList.remove('show');
+    }
+
+    // Show main menu screen
+    function showMainMenu() {
+      mainMenuScreen.classList.add('active');
+      howToPlayScreen.classList.remove('active');
+      settingsScreen.classList.remove('active');
+    }
+
+    // Show how to play screen
+    function showHowToPlay() {
+      mainMenuScreen.classList.remove('active');
+      howToPlayScreen.classList.add('active');
+      settingsScreen.classList.remove('active');
+    }
+
+    // Show settings screen
+    function showSettings() {
+      mainMenuScreen.classList.remove('active');
+      howToPlayScreen.classList.remove('active');
+      settingsScreen.classList.add('active');
     }
 
     // Toggle pipes setting
@@ -1232,6 +1711,84 @@
       localStorage.setItem('pipesEnabled', pipesEnabled.toString());
     }
 
+    // Update pipe settings
+    function updatePipeSettings() {
+      pipeSpacing = parseInt(pipeSpacingInput.value) || DEFAULT_PIPE_SPACING;
+      pipeGap = parseInt(pipeGapInput.value) || DEFAULT_PIPE_GAP;
+      pipeSpeed = parseFloat(pipeSpeedInput.value) || DEFAULT_PIPE_SPEED;
+      
+      // Save to localStorage
+      localStorage.setItem('pipeSpacing', pipeSpacing.toString());
+      localStorage.setItem('pipeGap', pipeGap.toString());
+      localStorage.setItem('pipeSpeed', pipeSpeed.toString());
+    }
+
+    // Update lives setting
+    function updateLives() {
+      maxLives = parseInt(livesInput.value) || 1;
+      if (maxLives < 1) maxLives = 1;
+      if (maxLives > 10) maxLives = 10;
+      livesInput.value = maxLives;
+      // Reset current lives to max when changing setting
+      currentLives = maxLives;
+      updateLivesDisplay();
+      localStorage.setItem('maxLives', maxLives.toString());
+    }
+
+    // Update lives display
+    function updateLivesDisplay() {
+      livesDisplay.textContent = currentLives;
+    }
+
+    // Update ghost duration setting
+    function updateGhostDuration() {
+      ghostDuration = parseInt(ghostDurationInput.value) || 2000;
+      if (ghostDuration < 500) ghostDuration = 500;
+      if (ghostDuration > 5000) ghostDuration = 5000;
+      ghostDurationInput.value = ghostDuration;
+      localStorage.setItem('ghostDuration', ghostDuration.toString());
+    }
+
+    // Reset high score
+    function resetHighscore() {
+      highscore = 0;
+      localStorage.removeItem('highscore');
+      highscoreEl.textContent = highscore;
+    }
+
+    // Reset all settings to defaults
+    function resetAllSettings() {
+      pipesEnabled = true;
+      pipeSpacing = DEFAULT_PIPE_SPACING;
+      pipeGap = DEFAULT_PIPE_GAP;
+      pipeSpeed = DEFAULT_PIPE_SPEED;
+      maxLives = 1;
+      ghostDuration = 2000;
+      
+      // Update UI
+      pipesToggle.classList.add('active');
+      pipeSpacingInput.value = DEFAULT_PIPE_SPACING;
+      pipeGapInput.value = DEFAULT_PIPE_GAP;
+      pipeSpeedInput.value = DEFAULT_PIPE_SPEED;
+      livesInput.value = 1;
+      ghostDurationInput.value = 2000;
+      
+      // Reset lives
+      currentLives = maxLives;
+      updateLivesDisplay();
+      
+      // Clear pipes when resetting
+      pipes = [];
+      
+      // Save to localStorage
+      localStorage.setItem('pipesEnabled', 'true');
+      localStorage.setItem('pipeSpacing', DEFAULT_PIPE_SPACING.toString());
+      localStorage.setItem('pipeGap', DEFAULT_PIPE_GAP.toString());
+      localStorage.setItem('pipeSpeed', DEFAULT_PIPE_SPEED.toString());
+      localStorage.setItem('maxLives', '1');
+      localStorage.setItem('ghostDuration', '2000');
+    }
+
     // Load settings from localStorage
     function loadSettings() {
       const savedPipes = localStorage.getItem('pipesEnabled');
@@ -1239,12 +1796,67 @@
         pipesEnabled = savedPipes === 'true';
         pipesToggle.classList.toggle('active', pipesEnabled);
       }
+      
+      const savedSpacing = localStorage.getItem('pipeSpacing');
+      if (savedSpacing !== null) {
+        pipeSpacing = parseInt(savedSpacing);
+        pipeSpacingInput.value = pipeSpacing;
+      }
+      
+      const savedGap = localStorage.getItem('pipeGap');
+      if (savedGap !== null) {
+        pipeGap = parseInt(savedGap);
+        pipeGapInput.value = pipeGap;
+      }
+      
+      const savedSpeed = localStorage.getItem('pipeSpeed');
+      if (savedSpeed !== null) {
+        pipeSpeed = parseFloat(savedSpeed);
+        pipeSpeedInput.value = pipeSpeed;
+      }
+      
+      const savedLives = localStorage.getItem('maxLives');
+      if (savedLives !== null) {
+        maxLives = parseInt(savedLives) || 1;
+        livesInput.value = maxLives;
+      }
+      currentLives = maxLives;
+      updateLivesDisplay();
+      
+      const savedGhostDuration = localStorage.getItem('ghostDuration');
+      if (savedGhostDuration !== null) {
+        ghostDuration = parseInt(savedGhostDuration) || 2000;
+        ghostDurationInput.value = ghostDuration;
+      }
     }
 
     // Game over
     function gameOver() {
       if (gameState !== 'playing') return;
       
+      // Decrement lives
+      currentLives--;
+      updateLivesDisplay();
+      
+      // If lives remaining, activate ghost mode and continue
+      if (currentLives > 0) {
+        // Brief pause to show collision
+        gameState = 'paused';
+        SoundManager.playCrash();
+        
+        // Activate ghost mode after short delay (bird continues from current position)
+        setTimeout(() => {
+          // Activate ghost mode
+          bird.ghosting = true;
+          bird.ghostEndTime = performance.now() + ghostDuration;
+          // Resume game (bird continues from where it collided)
+          gameState = 'playing';
+          updatePauseButton();
+        }, 500);
+        return;
+      }
+      
+      // No lives left - game over
       gameState = 'gameover';
       finalScoreEl.textContent = score;
       gameOverEl.classList.add('show');
@@ -1255,29 +1867,52 @@
 
     // Restart game
     function restartGame() {
-      gameState = 'paused';
-      gameOverEl.classList.remove('show');
-      bird.y = canvas.height / 2;
-      bird.velocity = 0;
-      bird.rotation = 0;
-      pipes = [];
-      score = 0;
-      frameCount = 0;
-      updateScores();
-      updatePauseButton();
-      gameLoop();
+      // Add glitch animations
+      restartBtn.classList.add('glitch');
+      canvas.classList.add('glitch');
+      bird.glitching = true;
+      SoundManager.playReboot();
+      
+      // Remove glitch animations after they complete
+      setTimeout(() => {
+        restartBtn.classList.remove('glitch');
+        canvas.classList.remove('glitch');
+        bird.glitching = false;
+      }, 300);
+      
+      // Small delay before restarting to show animation
+      setTimeout(() => {
+        gameState = 'paused';
+        gameOverEl.classList.remove('show');
+        bird.y = canvas.height / 2;
+        bird.velocity = 0;
+        bird.rotation = 0;
+        bird.ghosting = false; // Reset ghost mode
+        pipes = [];
+        score = 0;
+        frameCount = 0;
+        backgroundOffset = 0; // Reset parallax offset
+        currentLives = maxLives; // Reset lives
+        updateLivesDisplay();
+        lastTime = performance.now(); // Reset time tracking
+        updateScores();
+        updatePauseButton();
+        gameLoop();
+      }, 100);
     }
 
-    // Jump
-    function jump() {
+    // Start jump (for initial press)
+    function startJump() {
       if (gameState === 'paused') {
         resumeGame();
       } else if (gameState === 'playing') {
+        // Set initial velocity and mark as held
         bird.velocity = JUMP_STRENGTH;
+        lastJumpTime = performance.now();
+        SoundManager.playFlap();
         // Trigger wing flapping animation
         bird.wingFlapping = true;
-        bird.wingFlapDecay = 1.0; // Duration of flap animation
-        SoundManager.playFlap();
+        bird.wingFlapDecay = 1.0;
       }
     }
 
@@ -1287,7 +1922,23 @@
     pauseBtn.addEventListener('click', togglePause);
     menuBtn.addEventListener('click', showMenu);
     menuClose.addEventListener('click', hideMenu);
+    howToPlayBtn.addEventListener('click', showHowToPlay);
+    settingsBtn.addEventListener('click', showSettings);
+    backFromHowToPlay.addEventListener('click', showMainMenu);
+    backFromSettings.addEventListener('click', showMainMenu);
     pipesToggle.addEventListener('click', togglePipes);
+    pipeSpacingInput.addEventListener('change', updatePipeSettings);
+    pipeSpacingInput.addEventListener('input', updatePipeSettings);
+    pipeGapInput.addEventListener('change', updatePipeSettings);
+    pipeGapInput.addEventListener('input', updatePipeSettings);
+    pipeSpeedInput.addEventListener('change', updatePipeSettings);
+    pipeSpeedInput.addEventListener('input', updatePipeSettings);
+    livesInput.addEventListener('change', updateLives);
+    livesInput.addEventListener('input', updateLives);
+    ghostDurationInput.addEventListener('change', updateGhostDuration);
+    ghostDurationInput.addEventListener('input', updateGhostDuration);
+    resetHighscoreBtn.addEventListener('click', resetHighscore);
+    resetSettingsBtn.addEventListener('click', resetAllSettings);
     
     // Close menu modal when clicking outside
     menuModal.addEventListener('click', (e) => {
@@ -1301,19 +1952,37 @@
     });
 
     // Controls
-    canvas.addEventListener('click', jump);
+    canvas.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      mouseHeld = true;
+      startJump();
+    });
+    canvas.addEventListener('mouseup', (e) => {
+      e.preventDefault();
+      mouseHeld = false;
+    });
+    canvas.addEventListener('mouseleave', (e) => {
+      mouseHeld = false;
+    });
     canvas.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      jump();
+      mouseHeld = true;
+      startJump();
+    }, { passive: false });
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      mouseHeld = false;
+    }, { passive: false });
+    canvas.addEventListener('touchcancel', (e) => {
+      mouseHeld = false;
     }, { passive: false });
 
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space') {
         e.preventDefault();
-        if (gameState === 'paused') {
-          resumeGame();
-        } else if (gameState === 'playing') {
-          jump();
+        if (!spaceHeld) {
+          spaceHeld = true;
+          startJump();
         }
       } else if (e.code === 'Enter') {
         e.preventDefault();
@@ -1328,11 +1997,21 @@
       }
     });
 
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        spaceHeld = false;
+      }
+    });
+
     // Initialize pause button
     updatePauseButton();
 
     // Load settings
     loadSettings();
+
+    // Initialize high score display on page load
+    highscoreEl.textContent = highscore;
 
     // Start game loop
     gameLoop();
