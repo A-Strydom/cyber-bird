@@ -1619,9 +1619,19 @@
           });
         }
 
-        // Collision detection (skip if ghosting)
-        if (!bird.ghosting && (bird.y < 0 || bird.y > canvas.height || 
-            (pipesEnabled && checkCollision(bird, pipes)))) {
+        // Boundary constraints - keep bird within play area
+        const birdRadius = BIRD_SIZE * 0.6;
+        if (bird.y - birdRadius < 0) {
+          bird.y = birdRadius;
+          bird.velocity = 0; // Stop upward movement at top
+        }
+        if (bird.y + birdRadius > canvas.height) {
+          bird.y = canvas.height - birdRadius;
+          bird.velocity = 0; // Stop downward movement at bottom
+        }
+        
+        // Collision detection with pipes only (skip if ghosting)
+        if (!bird.ghosting && pipesEnabled && checkCollision(bird, pipes)) {
           gameOver();
         }
       } else if (gameState === 'paused') {
