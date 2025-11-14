@@ -1362,7 +1362,7 @@
     }
 
     // Draw pipe
-    function drawPipe(x, y, height, isTop) {
+    function drawPipe(x, y, height, isTop, passed = false) {
       const gradient = ctx.createLinearGradient(x, y, x + PIPE_WIDTH, y);
       gradient.addColorStop(0, '#00f5ff');
       gradient.addColorStop(0.5, '#0099cc');
@@ -1375,12 +1375,20 @@
       // Main pipe body
       ctx.fillRect(x, y, PIPE_WIDTH, height);
       
-      // Pipe cap
+      // Pipe cap - green if passed, red if not
       const capHeight = 20;
       const capGradient = ctx.createLinearGradient(x, y, x + PIPE_WIDTH, y);
-      capGradient.addColorStop(0, '#ff6b35');
-      capGradient.addColorStop(0.5, '#ff0040');
-      capGradient.addColorStop(1, '#cc0033');
+      if (passed) {
+        // Green gradient for passed pipes
+        capGradient.addColorStop(0, '#00ff88');
+        capGradient.addColorStop(0.5, '#00cc66');
+        capGradient.addColorStop(1, '#009944');
+      } else {
+        // Red gradient for unpassed pipes
+        capGradient.addColorStop(0, '#ff6b35');
+        capGradient.addColorStop(0.5, '#ff0040');
+        capGradient.addColorStop(1, '#cc0033');
+      }
       
       ctx.fillStyle = capGradient;
       if (isTop) {
@@ -1557,8 +1565,8 @@
         // Draw pipes (only if enabled)
         if (pipesEnabled) {
           pipes.forEach(pipe => {
-            drawPipe(pipe.x, 0, pipe.topHeight, true);
-            drawPipe(pipe.x, pipe.bottomY, canvas.height - pipe.bottomY, false);
+            drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
+            drawPipe(pipe.x, pipe.bottomY, canvas.height - pipe.bottomY, false, pipe.scored);
           });
         }
 
@@ -1571,8 +1579,8 @@
         // Draw pipes (static) when paused (only if enabled)
         if (pipesEnabled) {
           pipes.forEach(pipe => {
-            drawPipe(pipe.x, 0, pipe.topHeight, true);
-            drawPipe(pipe.x, pipe.bottomY, canvas.height - pipe.bottomY, false);
+            drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
+            drawPipe(pipe.x, pipe.bottomY, canvas.height - pipe.bottomY, false, pipe.scored);
           });
         }
       }
