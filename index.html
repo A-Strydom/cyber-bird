@@ -404,6 +404,11 @@
       font-size: 16px;
       color: inherit;
     }
+    .lives-display .material-icons.greyed {
+      color: #666666;
+      text-shadow: none;
+      opacity: 0.5;
+    }
     .high-score-system {
       position: fixed;
       bottom: 40px;
@@ -928,9 +933,8 @@
       <button id="restart" title="Restart"><span class="material-icons">power_settings_new</span></button>
       <div class="score-display">
         <strong id="score">0</strong>
-        <div class="lives-display">
+        <div class="lives-display" id="livesDisplay">
           <span class="material-icons">favorite</span>
-          <span id="livesDisplay">1</span>
         </div>
       </div>
       <button id="pauseBtn" title="Pause/Play"><span class="material-icons">pause</span></button>
@@ -1459,7 +1463,7 @@
 
     // Draw pipe
     function drawPipe(x, y, height, isTop, passed = false) {
-      const capHeight = 20;
+      const capHeight = 25;
       
       const gradient = ctx.createLinearGradient(x, y, x + PIPE_WIDTH, y);
       gradient.addColorStop(0, '#00f5ff');
@@ -1536,13 +1540,13 @@
       
       ctx.fillStyle = capGradient;
       ctx.shadowColor = capShadowColor;
-      ctx.shadowBlur = 15;
+      ctx.shadowBlur = 10;
       if (isTop) {
-        ctx.fillRect(x - 5, y + height - capHeight -1, PIPE_WIDTH + 10, capHeight +2);
+        ctx.fillRect(x - 4, y + height - capHeight -1, PIPE_WIDTH + 10, capHeight +2);
       } else {
-        ctx.fillRect(x - 5, y - 1, PIPE_WIDTH + 10, capHeight +2);
+        ctx.fillRect(x - 4, y - 1, PIPE_WIDTH + 10, capHeight +2);
       }
-      ctx.shadowBlur = 0;
+      ctx.shadowBlur = 1;
       
       // Left side highlight line on cap (offset for 3D effect)
       // Set color and shadow to match cap color (not blue)
@@ -1780,7 +1784,8 @@
               x: canvas.width,
               topHeight: gapY,
               bottomY: gapY + pipeGap,
-              scored: false
+              scored: false,
+              hit: false
             });
           }
         } else if (!pipesEnabled) {
@@ -1790,20 +1795,27 @@
 
         // Collision detection with pipes (check BEFORE drawing so pipes can be transparent immediately)
         let hasCollision = false;
-        if (gameState === 'playing' && !bird.ghosting && pipesEnabled && checkCollision(bird, pipes)) {
-          // Check if this is the last life - if so, start falling; otherwise use ghost mode
-          if (currentLives <= 1) {
-            // Last life - start falling
-            gameState = 'falling';
+        if (gameState === 'playing' && !bird.ghosting && pipesEnabled) {
+          const collidedPipe = checkCollision(bird, pipes);
+          if (collidedPipe) {
+            // Mark pipe as hit to prevent multiple collision detections
+            collidedPipe.hit = true;
             hasCollision = true;
-            SoundManager.playCrash();
-            // Disable controls
-            spaceHeld = false;
-            mouseHeld = false;
-          } else {
-            // Not last life - use ghost mode system
-            hasCollision = true;
-            gameOver();
+            
+            // Check if this is the last life - if so, start falling; otherwise use ghost mode
+            if (currentLives <= 1) {
+              // Last life - decrement to 0, start falling
+              currentLives = 0;
+              updateLivesDisplay();
+              gameState = 'falling';
+              SoundManager.playCrash();
+              // Disable controls
+              spaceHeld = false;
+              mouseHeld = false;
+            } else {
+              // Not last life - use ghost mode system
+              gameOver();
+            }
           }
         }
 
@@ -1825,6 +1837,7 @@
             gameState = 'gameover';
             finalScoreEl.textContent = score;
             gameOverEl.classList.add('show');
+            updateLivesDisplay(); // Ensure all hearts are greyed out
             updatePauseButton();
           }
         }
@@ -1892,28 +1905,33 @@
     function checkCollision(bird, pipes) {
       // Skip collision check if bird is ghosting (invulnerable)
       if (bird.ghosting) {
-        return false;
+        return null;
       }
       
       const birdRadius = BIRD_SIZE * 0.6;
       
       for (let pipe of pipes) {
+        // Skip pipes that have already been hit
+        if (pipe.hit) {
+          continue;
+        }
+        
         // Top pipe
         if (bird.x + birdRadius > pipe.x &&
             bird.x - birdRadius < pipe.x + PIPE_WIDTH &&
             bird.y - birdRadius < pipe.topHeight) {
-          return true;
+          return pipe;
         }
         
         // Bottom pipe
         if (bird.x + birdRadius > pipe.x &&
             bird.x - birdRadius < pipe.x + PIPE_WIDTH &&
             bird.y + birdRadius > pipe.bottomY) {
-          return true;
+          return pipe;
         }
       }
       
-      return false;
+      return null;
     }
 
     // Update scores
@@ -2044,7 +2062,19 @@
 
     // Update lives display
     function updateLivesDisplay() {
-      livesDisplay.textContent = currentLives;
+      // Clear existing hearts
+      livesDisplay.innerHTML = '';
+      // Add heart icons for max lives, grey out lost ones
+      for (let i = 0; i < maxLives; i++) {
+        const heart = document.createElement('span');
+        heart.className = 'material-icons';
+        heart.textContent = 'favorite';
+        // Grey out hearts that represent lost lives (including when currentLives is 0)
+        if (i >= currentLives || currentLives <= 0) {
+          heart.classList.add('greyed');
+        }
+        livesDisplay.appendChild(heart);
+      }
     }
 
     // Update ghost duration setting
