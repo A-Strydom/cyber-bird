@@ -429,13 +429,13 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(5, 0, 17, 0.95);
+      background: transparent;
       display: none;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       z-index: 1000;
-      backdrop-filter: blur(5px);
+      pointer-events: none;
       border-radius: 12px;
     }
     #gameOver.show {
@@ -443,6 +443,7 @@
     }
     .game-over-content {
       text-align: center;
+      pointer-events: auto;
     }
     .flatlined-text {
       font-size: 72px;
@@ -1103,7 +1104,7 @@
     let pipeSpacing = DEFAULT_PIPE_SPACING;
 
     // Game state
-    let gameState = 'paused'; // 'paused', 'playing', 'gameover'
+    let gameState = 'paused'; // 'paused', 'playing', 'falling', 'gameover'
     let pipesEnabled = true; // Setting to enable/disable pipes
     let maxLives = 1; // Default number of lives
     let currentLives = 1; // Current lives remaining
@@ -1644,30 +1645,35 @@
       // Draw ground
       drawGround();
 
-      if (gameState === 'playing') {
+      if (gameState === 'playing' || gameState === 'falling') {
         // Check if ghost mode should end
         if (bird.ghosting && performance.now() >= bird.ghostEndTime) {
           bird.ghosting = false;
         }
         
         // Update bird (time-based)
-        // Apply jump at intervals if space/mouse is held
-        if (spaceHeld || mouseHeld) {
-          const timeSinceLastJump = currentTime - lastJumpTime;
-          if (timeSinceLastJump >= JUMP_INTERVAL) {
-            // Apply jump force at interval
-            bird.velocity = JUMP_STRENGTH;
-            lastJumpTime = currentTime;
-            SoundManager.playFlap();
-            // Trigger wing flapping animation
-            bird.wingFlapping = true;
-            bird.wingFlapDecay = 1.0;
+        if (gameState === 'playing') {
+          // Apply jump at intervals if space/mouse is held
+          if (spaceHeld || mouseHeld) {
+            const timeSinceLastJump = currentTime - lastJumpTime;
+            if (timeSinceLastJump >= JUMP_INTERVAL) {
+              // Apply jump force at interval
+              bird.velocity = JUMP_STRENGTH;
+              lastJumpTime = currentTime;
+              SoundManager.playFlap();
+              // Trigger wing flapping animation
+              bird.wingFlapping = true;
+              bird.wingFlapDecay = 1.0;
+            } else {
+              // Apply gravity between jumps
+              bird.velocity += GRAVITY * deltaTime;
+            }
           } else {
-            // Apply gravity between jumps
+            // Apply gravity when not held
             bird.velocity += GRAVITY * deltaTime;
           }
-        } else {
-          // Apply gravity when not held
+        } else if (gameState === 'falling') {
+          // When falling, only apply gravity (no controls)
           bird.velocity += GRAVITY * deltaTime;
         }
         bird.y += bird.velocity * deltaTime;
@@ -1675,8 +1681,8 @@
         // Rotation based on velocity
         bird.rotation = Math.min(Math.max(bird.velocity * 0.1, -0.5), 0.5);
 
-        // Update pipes (only if enabled, time-based)
-        if (pipesEnabled) {
+        // Update pipes (only if enabled, time-based, and not falling)
+        if (pipesEnabled && gameState === 'playing') {
           for (let i = pipes.length - 1; i >= 0; i--) {
             pipes[i].x -= pipeSpeed * deltaTime;
 
@@ -1695,8 +1701,8 @@
           }
         }
 
-        // Add new pipes - spawn when no pipes exist or when last pipe is far enough from right edge
-        if (pipesEnabled) {
+        // Add new pipes - spawn when no pipes exist or when last pipe is far enough from right edge (only when playing, not falling)
+        if (pipesEnabled && gameState === 'playing') {
           let shouldSpawn = false;
           if (pipes.length === 0) {
             shouldSpawn = true;
@@ -1717,7 +1723,7 @@
               scored: false
             });
           }
-        } else {
+        } else if (!pipesEnabled) {
           // Clear pipes if disabled
           pipes = [];
         }
@@ -1737,16 +1743,27 @@
           bird.y = birdRadius;
           bird.velocity = 0; // Stop upward movement at top
         }
-        // Ground boundary - bird cannot go past ground
+        
+        // Ground collision - check if bird hits ground
         const groundY = canvas.height - GROUND_HEIGHT;
         if (bird.y + birdRadius > groundY) {
           bird.y = groundY - birdRadius;
           bird.velocity = 0; // Stop downward movement at ground
+          
+          // If falling, trigger game over when hitting ground
+          if (gameState === 'falling') {
+            gameOver();
+          }
         }
         
-        // Collision detection with pipes only (skip if ghosting)
-        if (!bird.ghosting && pipesEnabled && checkCollision(bird, pipes)) {
-          gameOver();
+        // Collision detection with pipes (only when playing, skip if ghosting)
+        if (gameState === 'playing' && !bird.ghosting && pipesEnabled && checkCollision(bird, pipes)) {
+          // Start falling instead of immediate game over
+          gameState = 'falling';
+          SoundManager.playCrash();
+          // Disable controls
+          spaceHeld = false;
+          mouseHeld = false;
         }
       } else if (gameState === 'paused') {
         // Draw pipes (static) when paused (only if enabled)
@@ -1756,6 +1773,27 @@
             drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
             drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
           });
+        }
+      } else if (gameState === 'falling') {
+        // Draw pipes (static) when falling
+        if (pipesEnabled) {
+          const groundY = canvas.height - GROUND_HEIGHT;
+          pipes.forEach(pipe => {
+            drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
+            drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
+          });
+        }
+      } else if (gameState === 'gameover') {
+        // Draw pipes (transparent) when gameover so text is readable
+        if (pipesEnabled) {
+          const groundY = canvas.height - GROUND_HEIGHT;
+          ctx.save();
+          ctx.globalAlpha = 0.3; // Make pipes more transparent
+          pipes.forEach(pipe => {
+            drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
+            drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
+          });
+          ctx.restore();
         }
       }
 
@@ -2014,7 +2052,8 @@
 
     // Game over
     function gameOver() {
-      if (gameState !== 'playing') return;
+      // Only trigger game over when falling and hitting ground, or if already gameover
+      if (gameState !== 'falling' && gameState !== 'playing') return;
       
       // Decrement lives
       currentLives--;
@@ -2043,8 +2082,8 @@
       finalScoreEl.textContent = score;
       gameOverEl.classList.add('show');
       updatePauseButton();
-      SoundManager.playCrash();
-      cancelAnimationFrame(animationFrame);
+      // Don't cancel animation frame - let the game continue to show the bird
+      // Note: Crash sound already played when collision occurred
     }
 
     // Restart game
@@ -2086,7 +2125,10 @@
 
     // Start jump (for initial press)
     function startJump() {
-      if (gameState === 'paused') {
+      if (gameState === 'gameover') {
+        // Restart game when gameover
+        restartGame();
+      } else if (gameState === 'paused') {
         resumeGame();
       } else if (gameState === 'playing') {
         // Set initial velocity and mark as held
@@ -2097,6 +2139,7 @@
         bird.wingFlapping = true;
         bird.wingFlapDecay = 1.0;
       }
+      // Ignore input when falling
     }
 
     // Event listeners
@@ -2198,7 +2241,10 @@
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space') {
         e.preventDefault();
-        if (!spaceHeld) {
+        if (gameState === 'gameover') {
+          // Restart game when gameover
+          restartGame();
+        } else if (!spaceHeld) {
           spaceHeld = true;
           startJump();
         }
