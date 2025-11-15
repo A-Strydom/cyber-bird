@@ -1382,7 +1382,7 @@
       // Wing animation (continuously flapping when playing)
       // Note: Wing animation is frame-based for smooth visual effect
       if (gameState === 'playing' || gameState === 'paused') {
-        bird.wingAngle += 0.4;
+        bird.wingAngle += 0.3;
       }
       // Wing flapping: angle oscillates upward (negative angle, so it goes up and can block eye)
       const wingFlapAngle = -Math.sin(bird.wingAngle) * 0.3; // -0.6 to 0.6 radians (~-35 to 35 degrees), negative so it flaps upward
@@ -1404,9 +1404,9 @@
       // Tail
       ctx.fillStyle = '#00aacc';
       ctx.beginPath();
-      ctx.moveTo(-BIRD_SIZE * 0.6, 0);
-      ctx.lineTo(-BIRD_SIZE * 0.9, -5);
-      ctx.lineTo(-BIRD_SIZE * 0.9, 5);
+      ctx.moveTo(-BIRD_SIZE * 0.2, 0);
+      ctx.lineTo(-BIRD_SIZE * 1.2, -5);
+      ctx.lineTo(-BIRD_SIZE * 1.4, 5);
       ctx.closePath();
       ctx.fill();
 
@@ -1463,18 +1463,98 @@
       ctx.shadowColor = '#00f5ff';
       ctx.save();
       // Position at base point (fixed on right side, moved left and down a bit), then rotate around that point
-      ctx.translate(-2, 4);
+      ctx.translate(-5, 2);
       ctx.rotate(wingFlapAngle - 0.2); // Add anti-clockwise rotation offset (about 11 degrees)
       // Draw wing with base at origin, extending to the left (negative x since it's on right side)
       // Make it slightly bigger and add dark blue outline
       ctx.fillStyle = '#00f5ff';
       ctx.strokeStyle = '#00aacc';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.ellipse(-6, 0, 15, 10, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      ctx.restore();
+      
+      // Fluffy feather texture on the wing
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      ctx.strokeStyle = '#00d9ff';
+      ctx.lineWidth = 1.5;
+      ctx.shadowBlur = 2;
+      ctx.shadowColor = '#00d9ff';
+      
+      // Draw feather-like curves aligned with wing direction (less radial, more directional)
+      const wingCenterX = -1;
+      const wingCenterY = 0;
+      const wingWidth = 30;
+      const wingHeight = 4;
+      
+      // Draw feathers in rows, following the wing's natural flow from base to tip
+      // Outer row of feathers (near the edge)
+      const outerRowCount = 6;
+      for (let i = 0; i < outerRowCount; i++) {
+        const t = i / (outerRowCount - 1); // 0 to 1
+        // Position along the wing's edge (top to bottom)
+        const yOffset = (t - 0.5) * wingHeight;
+        // Feather starts from inner part and extends outward
+        const startX = wingCenterX - wingWidth * 0.2;
+        const startY = wingCenterY + yOffset;
+        const endX = wingCenterX - wingWidth * 0.2;
+        const endY = wingCenterY + yOffset * 1.1; // Slight angle
+        
+        // Draw curved feather line
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        // Curve slightly upward/downward based on position
+        const curveOffset = (t - 0.5);
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2 + curveOffset;
+        ctx.quadraticCurveTo(midX, midY, endX, endY);
+        ctx.stroke();
+      }
+      
+      // Middle row of feathers
+      ctx.globalAlpha = 0.4;
+      const middleRowCount = 5;
+      for (let i = 0; i < middleRowCount; i++) {
+        const t = i / (middleRowCount - 1);
+        const yOffset = (t - 0.5) * wingHeight * 1.2;
+        const startX = wingCenterX - wingWidth * 0.15;
+        const startY = wingCenterY + yOffset;
+        const endX = wingCenterX - wingWidth * 0.65;
+        const endY = wingCenterY + yOffset * 1.05;
+        
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        const curveOffset = (t - 0.5) * 1.5;
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2 + curveOffset;
+        ctx.quadraticCurveTo(midX, midY, endX, endY);
+        ctx.stroke();
+      }
+      
+      // Inner row of smaller feathers
+      ctx.globalAlpha = 0.35;
+      const innerRowCount = 4;
+      for (let i = 0; i < innerRowCount; i++) {
+        const t = i / (innerRowCount - 1);
+        const yOffset = (t - 0.5) * wingHeight * 1.0;
+        const startX = wingCenterX - wingWidth * 0.05;
+        const startY = wingCenterY + yOffset;
+        const endX = wingCenterX - wingWidth * 0.45;
+        const endY = wingCenterY + yOffset * 1.02;
+        
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        const curveOffset = (t - 0.5) * 1;
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2 + curveOffset;
+        ctx.quadraticCurveTo(midX, midY, endX, endY);
+        ctx.stroke();
+      }
+      
+      ctx.restore(); // Restore feather texture settings
+      ctx.restore(); // Restore wing transform
 
       ctx.restore();
       // Reset filter and alpha after drawing
