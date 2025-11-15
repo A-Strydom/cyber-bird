@@ -1420,12 +1420,12 @@
 
       // Beak (small triangle pointing forward/right)
       ctx.shadowBlur = 0;
-      ctx.fillStyle = '#ff6b35';
-      ctx.strokeStyle = '#ff0040';
-      ctx.lineWidth = 2;
+      ctx.fillStyle = '#cc562a';
+      ctx.strokeStyle = '#cc562a';
+      ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(BIRD_SIZE * 0.6, -2); // Start at right edge of body
-      ctx.lineTo(BIRD_SIZE * 0.6 + 6, -1); // Point forward
+      ctx.lineTo(BIRD_SIZE * 0.6 + 6, -0.5); // Point forward
       ctx.lineTo(BIRD_SIZE * 0.6, 2); // Back to body
       ctx.closePath();
       ctx.fill();
