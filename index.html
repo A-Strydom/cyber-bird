@@ -1132,6 +1132,10 @@
     let lastTime = performance.now();
     let backgroundOffset = 0; // Parallax offset for background
     const PARALLAX_FACTOR = 0.4; // Background moves at 40% of pipe speed for parallax effect
+    let groundOffset = 0; // Ground scrolling offset
+    const GROUND_HEIGHT = 20; // Height of the ground element
+    let groundPatternCanvas = null; // Cached pattern canvas for performance
+    let groundPatternCached = false; // Flag to check if pattern is cached
     let spaceHeld = false;
     let mouseHeld = false;
     let lastJumpTime = 0;
@@ -1150,10 +1154,52 @@
       
       // Reset bird position
       bird.y = canvas.height / 2;
+      
+      // Invalidate ground pattern cache when canvas resizes
+      groundPatternCached = false;
     }
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
+
+    // Create cached ground pattern for performance
+    function createGroundPattern() {
+      const patternSpacing = 20;
+      const patternWidth = patternSpacing;
+      const patternHeight = GROUND_HEIGHT;
+      
+      // Create offscreen canvas for pattern (make it wide enough for seamless tiling)
+      const patternCanvas = document.createElement('canvas');
+      const patternWidthPixels = patternSpacing * 10; // Cache 10 patterns for seamless tiling
+      patternCanvas.width = patternWidthPixels;
+      patternCanvas.height = GROUND_HEIGHT;
+      const patternCtx = patternCanvas.getContext('2d');
+      
+      // Draw pattern on cached canvas
+      patternCtx.strokeStyle = '#00f5ff';
+      patternCtx.lineWidth = 4;
+      patternCtx.shadowColor = '#00f5ff';
+      patternCtx.shadowBlur = 2;
+      patternCtx.globalAlpha = 0.5;
+      
+      // Draw all ">" patterns
+      patternCtx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const patternX = i * patternSpacing;
+        const centerY = patternHeight * 0.5;
+        const topY = 0;
+        const bottomY = patternHeight;
+        
+        // Draw ">" shape
+        patternCtx.moveTo(patternX, topY);
+        patternCtx.lineTo(patternX + patternWidth * 0.5, centerY);
+        patternCtx.lineTo(patternX, bottomY);
+      }
+      patternCtx.stroke();
+      
+      groundPatternCanvas = patternCanvas;
+      groundPatternCached = true;
+    }
 
     // Sound Manager
     const SoundManager = {
@@ -1504,6 +1550,61 @@
       ctx.shadowBlur = 0;
     }
 
+    // Draw ground
+    function drawGround() {
+      const groundY = canvas.height - GROUND_HEIGHT;
+      
+      // Ground base gradient
+      const groundGradient = ctx.createLinearGradient(0, groundY, 0, canvas.height);
+      groundGradient.addColorStop(0, '#003344');
+      groundGradient.addColorStop(0.5, '#001122');
+      groundGradient.addColorStop(1, '#000000');
+      ctx.fillStyle = groundGradient;
+      ctx.fillRect(0, groundY, canvas.width, GROUND_HEIGHT);
+      
+      // Create pattern cache if not already created
+      if (!groundPatternCached || !groundPatternCanvas) {
+        createGroundPattern();
+      }
+      
+      // Draw cached pattern with scrolling offset (much faster than drawing each frame)
+      const patternSpacing = 20;
+      const patternOffset = groundOffset % (patternSpacing * 10); // Wrap to pattern width
+      
+      // Save context to clip to ground area
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, groundY, canvas.width, GROUND_HEIGHT);
+      ctx.clip();
+      
+      // Draw the cached pattern, tiling it horizontally
+      const patternWidth = patternSpacing * 10;
+      let drawX = -patternOffset;
+      
+      // Draw enough copies to cover the screen
+      while (drawX < canvas.width) {
+        ctx.drawImage(groundPatternCanvas, drawX, groundY);
+        drawX += patternWidth;
+      }
+      
+      // Restore context (remove clipping)
+      ctx.restore();
+      
+      // Top edge glow
+      ctx.strokeStyle = '#00f5ff';
+      ctx.lineWidth = 2;
+      ctx.shadowBlur = 10;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(canvas.width, groundY);
+      ctx.stroke();
+      
+      // Reset alpha
+      ctx.globalAlpha = 1.0;
+      ctx.shadowBlur = 0;
+    }
+
     // Game loop
     function gameLoop(currentTime) {
       // Initialize time if not provided (first call)
@@ -1525,6 +1626,12 @@
         if (backgroundOffset > canvas.width + 200) {
           backgroundOffset = backgroundOffset % (canvas.width + 200);
         }
+        // Update ground offset - moves at same speed as pipes for consistent movement
+        groundOffset += pipeSpeed * deltaTime;
+        // Wrap around to prevent overflow
+        if (groundOffset > 2000) {
+          groundOffset = groundOffset % 2000;
+        }
       }
       animationFrame = requestAnimationFrame(gameLoop);
 
@@ -1533,6 +1640,9 @@
 
       // Draw background
       drawBackground();
+      
+      // Draw ground
+      drawGround();
 
       if (gameState === 'playing') {
         // Check if ghost mode should end
@@ -1598,7 +1708,8 @@
           }
           
           if (shouldSpawn) {
-            const gapY = Math.random() * (canvas.height - pipeGap - 100) + 50;
+            const groundY = canvas.height - GROUND_HEIGHT;
+            const gapY = Math.random() * (groundY - pipeGap - 100) + 50;
             pipes.push({
               x: canvas.width,
               topHeight: gapY,
@@ -1613,9 +1724,10 @@
 
         // Draw pipes (only if enabled)
         if (pipesEnabled) {
+          const groundY = canvas.height - GROUND_HEIGHT;
           pipes.forEach(pipe => {
             drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
-            drawPipe(pipe.x, pipe.bottomY, canvas.height - pipe.bottomY, false, pipe.scored);
+            drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
           });
         }
 
@@ -1625,9 +1737,11 @@
           bird.y = birdRadius;
           bird.velocity = 0; // Stop upward movement at top
         }
-        if (bird.y + birdRadius > canvas.height) {
-          bird.y = canvas.height - birdRadius;
-          bird.velocity = 0; // Stop downward movement at bottom
+        // Ground boundary - bird cannot go past ground
+        const groundY = canvas.height - GROUND_HEIGHT;
+        if (bird.y + birdRadius > groundY) {
+          bird.y = groundY - birdRadius;
+          bird.velocity = 0; // Stop downward movement at ground
         }
         
         // Collision detection with pipes only (skip if ghosting)
@@ -1637,9 +1751,10 @@
       } else if (gameState === 'paused') {
         // Draw pipes (static) when paused (only if enabled)
         if (pipesEnabled) {
+          const groundY = canvas.height - GROUND_HEIGHT;
           pipes.forEach(pipe => {
             drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
-            drawPipe(pipe.x, pipe.bottomY, canvas.height - pipe.bottomY, false, pipe.scored);
+            drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
           });
         }
       }
@@ -1959,6 +2074,7 @@
         score = 0;
         frameCount = 0;
         backgroundOffset = 0; // Reset parallax offset
+        groundOffset = 0; // Reset ground offset
         currentLives = maxLives; // Reset lives
         updateLivesDisplay();
         lastTime = performance.now(); // Reset time tracking
