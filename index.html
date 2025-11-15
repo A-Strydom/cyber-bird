@@ -1728,13 +1728,16 @@
           pipes = [];
         }
 
-        // Draw pipes (only if enabled)
-        if (pipesEnabled) {
-          const groundY = canvas.height - GROUND_HEIGHT;
-          pipes.forEach(pipe => {
-            drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
-            drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
-          });
+        // Collision detection with pipes (check BEFORE drawing so pipes can be transparent immediately)
+        let hasCollision = false;
+        if (gameState === 'playing' && !bird.ghosting && pipesEnabled && checkCollision(bird, pipes)) {
+          // Start falling instead of immediate game over
+          gameState = 'falling';
+          hasCollision = true;
+          SoundManager.playCrash();
+          // Disable controls
+          spaceHeld = false;
+          mouseHeld = false;
         }
 
         // Boundary constraints - keep bird within play area
@@ -1755,15 +1758,26 @@
             gameOver();
           }
         }
-        
-        // Collision detection with pipes (only when playing, skip if ghosting)
-        if (gameState === 'playing' && !bird.ghosting && pipesEnabled && checkCollision(bird, pipes)) {
-          // Start falling instead of immediate game over
-          gameState = 'falling';
-          SoundManager.playCrash();
-          // Disable controls
-          spaceHeld = false;
-          mouseHeld = false;
+
+        // Draw pipes (only if enabled) - transparent if collision just happened
+        if (pipesEnabled) {
+          const groundY = canvas.height - GROUND_HEIGHT;
+          if (hasCollision || gameState === 'falling') {
+            // Draw pipes transparent immediately after collision
+            ctx.save();
+            ctx.globalAlpha = 0.3;
+            pipes.forEach(pipe => {
+              drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
+              drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
+            });
+            ctx.restore();
+          } else {
+            // Draw pipes normally
+            pipes.forEach(pipe => {
+              drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
+              drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
+            });
+          }
         }
       } else if (gameState === 'paused') {
         // Draw pipes (static) when paused (only if enabled)
@@ -1775,13 +1789,16 @@
           });
         }
       } else if (gameState === 'falling') {
-        // Draw pipes (static) when falling
+        // Draw pipes (transparent) when falling - immediately after collision
         if (pipesEnabled) {
           const groundY = canvas.height - GROUND_HEIGHT;
+          ctx.save();
+          ctx.globalAlpha = 0.3; // Make pipes transparent immediately
           pipes.forEach(pipe => {
             drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
             drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
           });
+          ctx.restore();
         }
       } else if (gameState === 'gameover') {
         // Draw pipes (transparent) when gameover so text is readable
@@ -2088,6 +2105,19 @@
 
     // Restart game
     function restartGame() {
+      // Cancel any existing animation frame to prevent multiple loops
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = 0;
+      }
+      
+      // Reset bird properties immediately to prevent accumulation during delay
+      bird.wingAngle = 30; // Reset wing animation
+      bird.wingFlapping = false; // Reset wing flapping state
+      bird.wingFlapDecay = 0; // Reset wing flap decay
+      bird.glitching = false; // Reset glitch state
+      bird.ghosting = false; // Reset ghost mode
+      
       // Add glitch animations
       restartBtn.classList.add('glitch');
       canvas.classList.add('glitch');
@@ -2108,6 +2138,9 @@
         bird.y = canvas.height / 2;
         bird.velocity = 0;
         bird.rotation = 0;
+        bird.wingAngle = 30; // Reset wing animation again (in case it changed during delay)
+        bird.wingFlapping = false; // Reset wing flapping state
+        bird.wingFlapDecay = 0; // Reset wing flap decay
         bird.ghosting = false; // Reset ghost mode
         pipes = [];
         score = 0;
