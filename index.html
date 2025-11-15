@@ -434,7 +434,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: transparent;
+      background: rgba(0, 0, 0, 0.4);
       display: none;
       flex-direction: column;
       justify-content: center;
@@ -1028,13 +1028,13 @@
             <div class="setting-item">
               <span class="setting-label">Lives</span>
               <div class="setting-input">
-                <input type="number" id="livesInput" min="1" max="10" step="1" value="1">
+                <input type="number" id="livesInput" min="1" max="10" step="1" value="3">
               </div>
             </div>
             <div class="setting-item">
               <span class="setting-label">Ghost Duration</span>
               <div class="setting-input">
-                <input type="number" id="ghostDurationInput" min="500" max="5000" step="100" value="2000">
+                <input type="number" id="ghostDurationInput" min="500" max="5000" step="100" value="3000">
                 <span style="color: #00f5ff; font-family: 'Share Tech Mono', monospace;">ms</span>
               </div>
             </div>
@@ -1110,9 +1110,9 @@
     // Game state
     let gameState = 'paused'; // 'paused', 'playing', 'falling', 'gameover'
     let pipesEnabled = true; // Setting to enable/disable pipes
-    let maxLives = 1; // Default number of lives
-    let currentLives = 1; // Current lives remaining
-    let ghostDuration = 2000; // Default ghost duration in milliseconds (2 seconds)
+    let maxLives = 3; // Default number of lives
+    let currentLives = 3; // Current lives remaining
+    let ghostDuration = 3000; // Default ghost duration in milliseconds (3 seconds)
     let bird = {
       x: 100,
       y: 250,
@@ -2050,7 +2050,7 @@
 
     // Update lives setting
     function updateLives() {
-      maxLives = parseInt(livesInput.value) || 1;
+      maxLives = parseInt(livesInput.value) || 3;
       if (maxLives < 1) maxLives = 1;
       if (maxLives > 10) maxLives = 10;
       livesInput.value = maxLives;
@@ -2079,7 +2079,7 @@
 
     // Update ghost duration setting
     function updateGhostDuration() {
-      ghostDuration = parseInt(ghostDurationInput.value) || 2000;
+      ghostDuration = parseInt(ghostDurationInput.value) || 3000;
       if (ghostDuration < 500) ghostDuration = 500;
       if (ghostDuration > 5000) ghostDuration = 5000;
       ghostDurationInput.value = ghostDuration;
@@ -2099,16 +2099,16 @@
       pipeSpacing = DEFAULT_PIPE_SPACING;
       pipeGap = DEFAULT_PIPE_GAP;
       pipeSpeed = DEFAULT_PIPE_SPEED;
-      maxLives = 1;
-      ghostDuration = 2000;
+      maxLives = 3;
+      ghostDuration = 3000;
       
       // Update UI
       pipesToggle.classList.add('active');
       pipeSpacingInput.value = DEFAULT_PIPE_SPACING;
       pipeGapInput.value = DEFAULT_PIPE_GAP;
       pipeSpeedInput.value = DEFAULT_PIPE_SPEED;
-      livesInput.value = 1;
-      ghostDurationInput.value = 2000;
+      livesInput.value = 3;
+      ghostDurationInput.value = 3000;
       
       // Reset lives
       currentLives = maxLives;
@@ -2122,8 +2122,8 @@
       localStorage.setItem('pipeSpacing', DEFAULT_PIPE_SPACING.toString());
       localStorage.setItem('pipeGap', DEFAULT_PIPE_GAP.toString());
       localStorage.setItem('pipeSpeed', DEFAULT_PIPE_SPEED.toString());
-      localStorage.setItem('maxLives', '1');
-      localStorage.setItem('ghostDuration', '2000');
+      localStorage.setItem('maxLives', '3');
+      localStorage.setItem('ghostDuration', '3000');
     }
 
     // Load settings from localStorage
@@ -2154,7 +2154,7 @@
       
       const savedLives = localStorage.getItem('maxLives');
       if (savedLives !== null) {
-        maxLives = parseInt(savedLives) || 1;
+        maxLives = parseInt(savedLives) || 3;
         livesInput.value = maxLives;
       }
       currentLives = maxLives;
@@ -2162,7 +2162,7 @@
       
       const savedGhostDuration = localStorage.getItem('ghostDuration');
       if (savedGhostDuration !== null) {
-        ghostDuration = parseInt(savedGhostDuration) || 2000;
+        ghostDuration = parseInt(savedGhostDuration) || 3000;
         ghostDurationInput.value = ghostDuration;
       }
     }
