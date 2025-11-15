@@ -1459,20 +1459,68 @@
 
     // Draw pipe
     function drawPipe(x, y, height, isTop, passed = false) {
+      const capHeight = 20;
+      
       const gradient = ctx.createLinearGradient(x, y, x + PIPE_WIDTH, y);
       gradient.addColorStop(0, '#00f5ff');
       gradient.addColorStop(0.5, '#0099cc');
       gradient.addColorStop(1, '#006699');
       
+      // Calculate body area (excluding cap) - draw body only in this area
+      let bodyY = y;
+      let bodyHeight = height;
+      if (isTop) {
+        // Top pipe: cap is at bottom, so body is from y to y + height - capHeight
+        bodyHeight = height - capHeight;
+      } else {
+        // Bottom pipe: cap is at top, so body starts after cap
+        bodyY = y + capHeight;
+        bodyHeight = height - capHeight;
+      }
+      
       ctx.fillStyle = gradient;
       ctx.shadowColor = '#00f5ff';
       ctx.shadowBlur = 15;
       
-      // Main pipe body
-      ctx.fillRect(x, y, PIPE_WIDTH, height);
+      // Main pipe body (only draw in body area, not where cap will be)
+      ctx.fillRect(x, bodyY, PIPE_WIDTH, bodyHeight);
       
-      // Pipe cap - green if passed, red if not
-      const capHeight = 20;
+      // Cyber grid pattern (only on pipe body, not on cap area)
+      ctx.strokeStyle = '#00f5ff';
+      ctx.lineWidth = 1;
+      ctx.shadowBlur = 5;
+      
+      // Draw grid lines only on the body area
+      for (let i = 0; i < bodyHeight; i += 15) {
+        ctx.beginPath();
+        ctx.moveTo(x, bodyY + i);
+        ctx.lineTo(x + PIPE_WIDTH, bodyY + i);
+        ctx.stroke();
+      }
+      
+      for (let i = 0; i < PIPE_WIDTH; i += 15) {
+        ctx.beginPath();
+        ctx.moveTo(x + i, bodyY);
+        ctx.lineTo(x + i, bodyY + bodyHeight);
+        ctx.stroke();
+      }
+      
+      // Left side highlight line on pipe body (3D effect)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; // 50% opacity white
+      ctx.lineWidth = 10;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#66ffff';
+      ctx.beginPath();
+      ctx.moveTo(x + 12, bodyY);
+      ctx.lineTo(x + 12, bodyY + bodyHeight);
+      ctx.stroke();
+      
+      ctx.shadowBlur = 0;
+      
+      // Pipe cap - drawn last so it's on top (green if passed, red if not)
+      // Set cap shadow color based on passed status
+      const capShadowColor = passed ? '#00ff88' : '#ff6b35';
+      
       const capGradient = ctx.createLinearGradient(x, y, x + PIPE_WIDTH, y);
       if (passed) {
         // Green gradient for passed pipes
@@ -1487,32 +1535,40 @@
       }
       
       ctx.fillStyle = capGradient;
+      ctx.shadowColor = capShadowColor;
+      ctx.shadowBlur = 15;
       if (isTop) {
-        ctx.fillRect(x - 5, y + height - capHeight, PIPE_WIDTH + 10, capHeight);
+        ctx.fillRect(x - 5, y + height - capHeight -1, PIPE_WIDTH + 10, capHeight +2);
       } else {
-        ctx.fillRect(x - 5, y, PIPE_WIDTH + 10, capHeight);
+        ctx.fillRect(x - 5, y - 1, PIPE_WIDTH + 10, capHeight +2);
       }
-      
-      // Cyber grid pattern
-      ctx.strokeStyle = '#00f5ff';
-      ctx.lineWidth = 1;
-      ctx.shadowBlur = 5;
-      
-      for (let i = 0; i < height; i += 15) {
-        ctx.beginPath();
-        ctx.moveTo(x, y + i);
-        ctx.lineTo(x + PIPE_WIDTH, y + i);
-        ctx.stroke();
-      }
-      
-      for (let i = 0; i < PIPE_WIDTH; i += 15) {
-        ctx.beginPath();
-        ctx.moveTo(x + i, y);
-        ctx.lineTo(x + i, y + height);
-        ctx.stroke();
-      }
-      
       ctx.shadowBlur = 0;
+      
+      // Left side highlight line on cap (offset for 3D effect)
+      // Set color and shadow to match cap color (not blue)
+      if (passed) {
+        ctx.strokeStyle = '#88ffcc'; // Lighter green for passed pipes
+        ctx.shadowColor = '#88ffcc'; // Green glow to match cap
+      } else {
+        ctx.strokeStyle = '#ffaa66'; // Lighter red/orange for unpassed pipes
+        ctx.shadowColor = '#ffaa66'; // Red/orange glow to match cap
+      }
+      ctx.lineWidth = 10;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      if (isTop) {
+        // Top pipe cap: highlight on left, slightly offset inward
+        const capY = y + height - capHeight;
+        ctx.moveTo(x + 7, capY);
+        ctx.lineTo(x + 7, capY + capHeight);
+      } else {
+        // Bottom pipe cap: highlight on left, slightly offset inward
+        ctx.moveTo(x + 7, y);
+        ctx.lineTo(x + 7, y + capHeight);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = '#00f5ff'; // Reset to default blue for other elements
     }
 
     // Draw background
@@ -1555,11 +1611,15 @@
     function drawGround() {
       const groundY = canvas.height - GROUND_HEIGHT;
       
-      // Ground base gradient
+      // Ground fill background (solid base color - visible behind everything)
+      ctx.fillStyle = '#4952BE';
+      ctx.fillRect(0, groundY, canvas.width, GROUND_HEIGHT);
+      
+      // Ground base gradient (semi-transparent overlay to show base through)
       const groundGradient = ctx.createLinearGradient(0, groundY, 0, canvas.height);
-      groundGradient.addColorStop(0, '#003344');
-      groundGradient.addColorStop(0.5, '#001122');
-      groundGradient.addColorStop(1, '#000000');
+      groundGradient.addColorStop(0, 'rgba(0, 51, 68, 0.6)'); // More transparent
+      groundGradient.addColorStop(0.5, 'rgba(0, 17, 34, 0.4)');
+      groundGradient.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
       ctx.fillStyle = groundGradient;
       ctx.fillRect(0, groundY, canvas.width, GROUND_HEIGHT);
       
@@ -1731,13 +1791,20 @@
         // Collision detection with pipes (check BEFORE drawing so pipes can be transparent immediately)
         let hasCollision = false;
         if (gameState === 'playing' && !bird.ghosting && pipesEnabled && checkCollision(bird, pipes)) {
-          // Start falling instead of immediate game over
-          gameState = 'falling';
-          hasCollision = true;
-          SoundManager.playCrash();
-          // Disable controls
-          spaceHeld = false;
-          mouseHeld = false;
+          // Check if this is the last life - if so, start falling; otherwise use ghost mode
+          if (currentLives <= 1) {
+            // Last life - start falling
+            gameState = 'falling';
+            hasCollision = true;
+            SoundManager.playCrash();
+            // Disable controls
+            spaceHeld = false;
+            mouseHeld = false;
+          } else {
+            // Not last life - use ghost mode system
+            hasCollision = true;
+            gameOver();
+          }
         }
 
         // Boundary constraints - keep bird within play area
@@ -1753,17 +1820,20 @@
           bird.y = groundY - birdRadius;
           bird.velocity = 0; // Stop downward movement at ground
           
-          // If falling, trigger game over when hitting ground
+          // If falling, show game over screen when hitting ground
           if (gameState === 'falling') {
-            gameOver();
+            gameState = 'gameover';
+            finalScoreEl.textContent = score;
+            gameOverEl.classList.add('show');
+            updatePauseButton();
           }
         }
 
-        // Draw pipes (only if enabled) - transparent if collision just happened
+        // Draw pipes (only if enabled) - transparent only when falling (last life)
         if (pipesEnabled) {
           const groundY = canvas.height - GROUND_HEIGHT;
-          if (hasCollision || gameState === 'falling') {
-            // Draw pipes transparent immediately after collision
+          if (gameState === 'falling') {
+            // Draw pipes transparent when falling (last life lost)
             ctx.save();
             ctx.globalAlpha = 0.3;
             pipes.forEach(pipe => {
@@ -1772,7 +1842,7 @@
             });
             ctx.restore();
           } else {
-            // Draw pipes normally
+            // Draw pipes normally (including during ghost mode)
             pipes.forEach(pipe => {
               drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
               drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
@@ -2069,8 +2139,8 @@
 
     // Game over
     function gameOver() {
-      // Only trigger game over when falling and hitting ground, or if already gameover
-      if (gameState !== 'falling' && gameState !== 'playing') return;
+      // Only trigger game over when playing (not when already falling or gameover)
+      if (gameState !== 'playing') return;
       
       // Decrement lives
       currentLives--;
@@ -2094,13 +2164,12 @@
         return;
       }
       
-      // No lives left - game over
-      gameState = 'gameover';
-      finalScoreEl.textContent = score;
-      gameOverEl.classList.add('show');
-      updatePauseButton();
-      // Don't cancel animation frame - let the game continue to show the bird
-      // Note: Crash sound already played when collision occurred
+      // No lives left - start falling (will trigger game over when hitting ground)
+      gameState = 'falling';
+      SoundManager.playCrash();
+      // Disable controls
+      spaceHeld = false;
+      mouseHeld = false;
     }
 
     // Restart game
