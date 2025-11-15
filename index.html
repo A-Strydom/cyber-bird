@@ -434,7 +434,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.7);
       display: none;
       flex-direction: column;
       justify-content: center;
@@ -1110,7 +1110,18 @@
     let lastTime = performance.now();
     let backgroundOffset = 0; // Parallax offset for background
     const PARALLAX_FACTOR = 0.4; // Background moves at 40% of pipe speed for parallax effect
+    let cityscapeOffset = 0; // Parallax offset for cityscape
+    const CITYSCAPE_PARALLAX_FACTOR = 0.7; // Cityscape moves at 70% of pipe speed (between stars and pipes)
     let groundOffset = 0; // Ground scrolling offset
+    let cityscapeBuildings = []; // Array to store cityscape building data
+    let cityscapeStreetLights = []; // Array to store street lights
+    let cityscapeBillboards = []; // Array to store billboards
+    let planes = []; // Array to store planes
+    let lastPlaneSpawn = 0; // Last time a plane was spawned
+    const PLANE_SPAWN_INTERVAL = 8000; // Spawn a plane every 8 seconds
+    const PLANE_SPEED = 6; // Pixels per frame (increased for faster movement)
+    let lastWindowUpdate = 0; // Last time windows were updated
+    const WINDOW_UPDATE_INTERVAL = 2000; // Update windows every 2 seconds
     const GROUND_HEIGHT = 20; // Height of the ground element
     let groundPatternCanvas = null; // Cached pattern canvas for performance
     let groundPatternCached = false; // Flag to check if pattern is cached
@@ -1119,6 +1130,14 @@
     let mouseHeld = false;
     let lastJumpTime = 0;
     const JUMP_INTERVAL = 150; // milliseconds between jumps when held
+    
+    // Cached gradients for performance
+    let cachedPipeGradient = null;
+    let cachedPipeCapGradientPassed = null;
+    let cachedPipeCapGradientUnpassed = null;
+    let cachedBirdGradient = null;
+    let cachedSkyGradient = null;
+    let cachedBuildingGradient = null;
 
     // Canvas setup
     function resizeCanvas() {
@@ -1138,22 +1157,145 @@
       groundPatternCached = false;
       // Regenerate star positions when canvas resizes
       initializeStarPositions();
+      // Regenerate cityscape when canvas resizes
+      cityscapeBuildings = [];
+      cityscapeStreetLights = [];
+      cityscapeBillboards = [];
+      initializeCityscape();
     }
     
     // Initialize random star positions
     function initializeStarPositions() {
       starPositions = [];
       const wrapWidth = canvas.width + 200;
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 100; i++) { // Increased from 50 to 100 for denser stars
         starPositions.push({
           baseX: Math.random() * wrapWidth,
           y: Math.random() * canvas.height
         });
       }
     }
+    
+    // Initialize cityscape buildings
+    function initializeCityscape() {
+      cityscapeBuildings = [];
+      cityscapeStreetLights = [];
+      cityscapeBillboards = [];
+      const groundY = canvas.height - GROUND_HEIGHT;
+      const wrapWidth = canvas.width * 2; // Wider wrap for cityscape
+      
+      // Billboard text options and fonts (defined once for consistency)
+      const billboardTexts = ['CYBERBIRD', 'FLY AWAY', 'BE FREE', 'Glow', 'Be Nova', 'Neonworld', 'City of Dreams', 'Mox', 'Gigs Available', 'Auto Fixer'];
+      const billboardFonts = [
+        { family: 'Arial', weight: 'bold', style: 'normal' },
+        { family: 'Courier New', weight: 'bold', style: 'normal' },
+        { family: 'Impact', weight: 'normal', style: 'normal' },
+        { family: 'Verdana', weight: 'bold', style: 'normal' },
+        { family: 'Georgia', weight: 'bold', style: 'normal' },
+        { family: 'Arial', weight: 'normal', style: 'italic' },
+        { family: 'Courier New', weight: 'normal', style: 'normal' },
+        { family: 'Arial', weight: '900', style: 'normal' }
+      ];
+      
+      // Create buildings across the wrap width
+      let currentX = 0;
+      while (currentX < wrapWidth) {
+        const buildingWidth = 40 + Math.random() * 60; // 40-100px wide
+        const buildingHeight = 80 + Math.random() * (groundY - 150); // Vary heights
+        const buildingX = currentX;
+        const buildingY = groundY - buildingHeight;
+        
+        // Create building with details
+        const building = {
+          x: buildingX,
+          y: buildingY,
+          width: buildingWidth,
+          height: buildingHeight,
+          windows: [],
+          neonSigns: [],
+          hasNeonTop: Math.random() > 0.7 // 30% chance of neon top
+        };
+        
+        // Add windows (grid pattern)
+        const windowRows = Math.floor(buildingHeight / 25);
+        const windowCols = Math.floor(buildingWidth / 15);
+        const neonColors = ['#00f5ff', '#ff00ff', '#ffff00', '#00ff88', '#ff6b35'];
+        for (let row = 0; row < windowRows; row++) {
+          for (let col = 0; col < windowCols; col++) {
+            if (Math.random() > 0.3) { // 70% chance of window
+              const isNeon = Math.random() > 0.85; // 15% chance of neon window
+              const windowObj = {
+                x: buildingX + 5 + col * 15,
+                y: buildingY + 5 + row * 25,
+                lit: Math.random() > 0.5, // Random lit/unlit windows
+                neon: isNeon // Some windows are neon
+              };
+              if (isNeon) {
+                // Assign a random neon color to neon windows
+                windowObj.neonColor = neonColors[Math.floor(Math.random() * neonColors.length)];
+              }
+              building.windows.push(windowObj);
+            }
+          }
+        }
+        
+        // Add neon signs (some buildings) - vibrant neon colors
+        if (Math.random() > 0.6) { // 40% of buildings have signs
+          const signY = buildingY + buildingHeight * 0.3;
+          // Random neon colors: cyan, magenta, yellow, green, orange
+          const neonColors = ['#00f5ff', '#ff00ff', '#ffff00', '#00ff88', '#ff6b35'];
+          const randomColor = neonColors[Math.floor(Math.random() * neonColors.length)];
+          building.neonSigns.push({
+            x: buildingX + buildingWidth * 0.2,
+            y: signY,
+            width: buildingWidth * 0.6,
+            height: 8,
+            color: randomColor // Vibrant neon colors
+          });
+        }
+        
+        cityscapeBuildings.push(building);
+        currentX += buildingWidth + (Math.random() * 20); // Space between buildings
+        
+        // Add billboards occasionally (between buildings)
+        if (Math.random() > 0.7) { // 30% chance of billboard
+          const billboardX = currentX - (Math.random() * 10);
+          const billboardWidth = 40 + Math.random() * 30; // 40-70px wide
+          const billboardHeight = 25 + Math.random() * 15; // 25-40px tall
+          const neonColors = ['#00f5ff', '#ff00ff', '#ffff00', '#00ff88', '#ff6b35'];
+          cityscapeBillboards.push({
+            x: billboardX,
+            y: groundY - billboardHeight - 5, // Slightly above ground
+            width: billboardWidth,
+            height: billboardHeight,
+            color: neonColors[Math.floor(Math.random() * neonColors.length)],
+            text: billboardTexts[Math.floor(Math.random() * billboardTexts.length)],
+            font: billboardFonts[Math.floor(Math.random() * billboardFonts.length)]
+          });
+        }
+      }
+      
+      // Add equally spaced street lights along the bottom
+      const streetLightSpacing = 60; // Space between street lights
+      const neonColors = ['#00f5ff', '#ffff00', '#ff00ff'];
+      for (let x = 0; x < wrapWidth; x += streetLightSpacing) {
+        const lightHeight = 35 + Math.random() * 10; // 35-45px tall (slight variation)
+        cityscapeStreetLights.push({
+          x: x,
+          y: groundY - lightHeight,
+          height: lightHeight,
+          color: neonColors[Math.floor(Math.random() * neonColors.length)]
+        });
+      }
+    }
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize', () => {
+      // Clear cached gradients on resize since canvas dimensions change
+      cachedSkyGradient = null;
+      cachedBuildingGradient = null;
+      resizeCanvas();
+    });
 
     // Create cached ground pattern for performance
     function createGroundPattern() {
@@ -1391,12 +1533,14 @@
       ctx.shadowColor = '#00f5ff';
       ctx.shadowBlur = 20;
       
-      // Body (main circle)
-      const gradient = ctx.createRadialGradient(0, -5, 0, 0, 0, BIRD_SIZE);
-      gradient.addColorStop(0, '#00f5ff');
-      gradient.addColorStop(0.5, '#0099cc');
-      gradient.addColorStop(1, '#006699');
-      ctx.fillStyle = gradient;
+      // Body (main circle) - cache gradient
+      if (!cachedBirdGradient) {
+        cachedBirdGradient = ctx.createRadialGradient(0, -5, 0, 0, 0, BIRD_SIZE);
+        cachedBirdGradient.addColorStop(0, '#00f5ff');
+        cachedBirdGradient.addColorStop(0.5, '#0099cc');
+        cachedBirdGradient.addColorStop(1, '#006699');
+      }
+      ctx.fillStyle = cachedBirdGradient;
       ctx.beginPath();
       ctx.arc(0, 0, BIRD_SIZE * 0.6, 0, Math.PI * 2);
       ctx.fill();
@@ -1475,9 +1619,8 @@
       ctx.fill();
       ctx.stroke();
       
-      // Fluffy feather texture on the wing
+      // Fluffy feather texture on the wing - optimized batch drawing
       ctx.save();
-      ctx.globalAlpha = 0.7;
       ctx.strokeStyle = '#00d9ff';
       ctx.lineWidth = 1.5;
       ctx.shadowBlur = 2;
@@ -1489,32 +1632,30 @@
       const wingWidth = 30;
       const wingHeight = 4;
       
-      // Draw feathers in rows, following the wing's natural flow from base to tip
+      // Batch draw all feathers in one path for better performance
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      
       // Outer row of feathers (near the edge)
       const outerRowCount = 6;
       for (let i = 0; i < outerRowCount; i++) {
-        const t = i / (outerRowCount - 1); // 0 to 1
-        // Position along the wing's edge (top to bottom)
+        const t = i / (outerRowCount - 1);
         const yOffset = (t - 0.5) * wingHeight;
-        // Feather starts from inner part and extends outward
         const startX = wingCenterX - wingWidth * 0.2;
         const startY = wingCenterY + yOffset;
         const endX = wingCenterX - wingWidth * 0.2;
-        const endY = wingCenterY + yOffset * 1.1; // Slight angle
-        
-        // Draw curved feather line
-        ctx.beginPath();
+        const endY = wingCenterY + yOffset * 1.1;
         ctx.moveTo(startX, startY);
-        // Curve slightly upward/downward based on position
         const curveOffset = (t - 0.5);
         const midX = (startX + endX) / 2;
         const midY = (startY + endY) / 2 + curveOffset;
         ctx.quadraticCurveTo(midX, midY, endX, endY);
-        ctx.stroke();
       }
+      ctx.stroke();
       
       // Middle row of feathers
       ctx.globalAlpha = 0.4;
+      ctx.beginPath();
       const middleRowCount = 5;
       for (let i = 0; i < middleRowCount; i++) {
         const t = i / (middleRowCount - 1);
@@ -1523,18 +1664,17 @@
         const startY = wingCenterY + yOffset;
         const endX = wingCenterX - wingWidth * 0.65;
         const endY = wingCenterY + yOffset * 1.05;
-        
-        ctx.beginPath();
         ctx.moveTo(startX, startY);
         const curveOffset = (t - 0.5) * 1.5;
         const midX = (startX + endX) / 2;
         const midY = (startY + endY) / 2 + curveOffset;
         ctx.quadraticCurveTo(midX, midY, endX, endY);
-        ctx.stroke();
       }
+      ctx.stroke();
       
       // Inner row of smaller feathers
       ctx.globalAlpha = 0.35;
+      ctx.beginPath();
       const innerRowCount = 4;
       for (let i = 0; i < innerRowCount; i++) {
         const t = i / (innerRowCount - 1);
@@ -1543,15 +1683,13 @@
         const startY = wingCenterY + yOffset;
         const endX = wingCenterX - wingWidth * 0.45;
         const endY = wingCenterY + yOffset * 1.02;
-        
-        ctx.beginPath();
         ctx.moveTo(startX, startY);
         const curveOffset = (t - 0.5) * 1;
         const midX = (startX + endX) / 2;
         const midY = (startY + endY) / 2 + curveOffset;
         ctx.quadraticCurveTo(midX, midY, endX, endY);
-        ctx.stroke();
       }
+      ctx.stroke();
       
       ctx.restore(); // Restore feather texture settings
       ctx.restore(); // Restore wing transform
@@ -1568,10 +1706,14 @@
     function drawPipe(x, y, height, isTop, passed = false) {
       const capHeight = 25;
       
-      const gradient = ctx.createLinearGradient(x, y, x + PIPE_WIDTH, y);
-      gradient.addColorStop(0, '#00f5ff');
-      gradient.addColorStop(0.5, '#0099cc');
-      gradient.addColorStop(1, '#006699');
+      // Cache pipe gradient (reuse for all pipes)
+      if (!cachedPipeGradient) {
+        cachedPipeGradient = ctx.createLinearGradient(0, 0, PIPE_WIDTH, 0);
+        cachedPipeGradient.addColorStop(0, '#00f5ff');
+        cachedPipeGradient.addColorStop(0.5, '#0099cc');
+        cachedPipeGradient.addColorStop(1, '#006699');
+      }
+      const gradient = cachedPipeGradient;
       
       // Calculate body area (excluding cap) - draw body only in this area
       let bodyY = y;
@@ -1592,25 +1734,26 @@
       // Main pipe body (only draw in body area, not where cap will be)
       ctx.fillRect(x, bodyY, PIPE_WIDTH, bodyHeight);
       
-      // Cyber grid pattern (only on pipe body, not on cap area)
+      // Cyber grid pattern (only on pipe body, not on cap area) - optimized batch drawing
       ctx.strokeStyle = '#00f5ff';
       ctx.lineWidth = 1;
       ctx.shadowBlur = 5;
       
-      // Draw grid lines only on the body area
+      // Batch horizontal lines
+      ctx.beginPath();
       for (let i = 0; i < bodyHeight; i += 15) {
-        ctx.beginPath();
         ctx.moveTo(x, bodyY + i);
         ctx.lineTo(x + PIPE_WIDTH, bodyY + i);
-        ctx.stroke();
       }
+      ctx.stroke();
       
+      // Batch vertical lines
+      ctx.beginPath();
       for (let i = 0; i < PIPE_WIDTH; i += 15) {
-        ctx.beginPath();
         ctx.moveTo(x + i, bodyY);
         ctx.lineTo(x + i, bodyY + bodyHeight);
-        ctx.stroke();
       }
+      ctx.stroke();
       
       // Left side highlight line on pipe body (3D effect)
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; // 50% opacity white
@@ -1628,69 +1771,144 @@
       // Set cap shadow color based on passed status
       const capShadowColor = passed ? '#00ff88' : '#ff6b35';
       
-      const capGradient = ctx.createLinearGradient(x, y, x + PIPE_WIDTH, y);
+      // Cache cap gradients
+      let capGradient;
       if (passed) {
-        // Green gradient for passed pipes
-        capGradient.addColorStop(0, '#00ff88');
-        capGradient.addColorStop(0.5, '#00cc66');
-        capGradient.addColorStop(1, '#009944');
+        if (!cachedPipeCapGradientPassed) {
+          cachedPipeCapGradientPassed = ctx.createLinearGradient(0, 0, PIPE_WIDTH, 0);
+          cachedPipeCapGradientPassed.addColorStop(0, '#00ff88');
+          cachedPipeCapGradientPassed.addColorStop(0.5, '#00cc66');
+          cachedPipeCapGradientPassed.addColorStop(1, '#009944');
+        }
+        capGradient = cachedPipeCapGradientPassed;
       } else {
-        // Red gradient for unpassed pipes
-        capGradient.addColorStop(0, '#ff6b35');
-        capGradient.addColorStop(0.5, '#ff0040');
-        capGradient.addColorStop(1, '#cc0033');
+        if (!cachedPipeCapGradientUnpassed) {
+          cachedPipeCapGradientUnpassed = ctx.createLinearGradient(0, 0, PIPE_WIDTH, 0);
+          cachedPipeCapGradientUnpassed.addColorStop(0, '#ff6b35');
+          cachedPipeCapGradientUnpassed.addColorStop(0.5, '#ff0040');
+          cachedPipeCapGradientUnpassed.addColorStop(1, '#cc0033');
+        }
+        capGradient = cachedPipeCapGradientUnpassed;
       }
       
+      // Calculate cap position
+      let capX, capY;
+      if (isTop) {
+        capY = y + height - capHeight;
+        capX = x - 4;
+      } else {
+        capY = y;
+        capX = x - 4;
+      }
+      
+      // Draw cap with shadow for depth
       ctx.fillStyle = capGradient;
       ctx.shadowColor = capShadowColor;
       ctx.shadowBlur = 10;
-      if (isTop) {
-        ctx.fillRect(x - 4, y + height - capHeight -1, PIPE_WIDTH + 10, capHeight +2);
-      } else {
-        ctx.fillRect(x - 4, y - 1, PIPE_WIDTH + 10, capHeight +2);
-      }
-      ctx.shadowBlur = 1;
+      ctx.fillRect(capX, capY - 1, PIPE_WIDTH + 10, capHeight + 2);
       
-      // Left side highlight line on cap (offset for 3D effect)
-      // Set color and shadow to match cap color (not blue)
+      // Add 3D depth effects
       if (passed) {
-        ctx.strokeStyle = '#88ffcc'; // Lighter green for passed pipes
-        ctx.shadowColor = '#88ffcc'; // Green glow to match cap
+        // Top edge highlight (brighter, for 3D top surface)
+        ctx.strokeStyle = '#aaffdd'; // Very light green
+        ctx.shadowColor = '#aaffdd';
+        ctx.shadowBlur = 4;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(capX + 2, capY);
+        ctx.lineTo(capX + PIPE_WIDTH + 8, capY);
+        ctx.stroke();
+        
+        // Bottom edge shadow (darker, for depth)
+        ctx.strokeStyle = '#006644'; // Dark green
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(capX + 2, capY + capHeight);
+        ctx.lineTo(capX + PIPE_WIDTH + 8, capY + capHeight);
+        ctx.stroke();
+        
+        // Left side highlight (vertical, for 3D edge)
+        ctx.strokeStyle = '#88ffcc'; // Lighter green
+        ctx.shadowColor = '#88ffcc';
+        ctx.shadowBlur = 6;
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(capX + 7, capY);
+        ctx.lineTo(capX + 7, capY + capHeight);
+        ctx.stroke();
+        
+        // Right side shadow (vertical, for depth)
+        ctx.strokeStyle = '#006644'; // Dark green
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(capX + PIPE_WIDTH + 3, capY);
+        ctx.lineTo(capX + PIPE_WIDTH + 3, capY + capHeight);
+        ctx.stroke();
       } else {
-        ctx.strokeStyle = '#ffaa66'; // Lighter red/orange for unpassed pipes
-        ctx.shadowColor = '#ffaa66'; // Red/orange glow to match cap
+        // Top edge highlight (brighter, for 3D top surface)
+        ctx.strokeStyle = '#ffcc99'; // Very light orange/red
+        ctx.shadowColor = '#ffcc99';
+        ctx.shadowBlur = 4;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(capX + 2, capY);
+        ctx.lineTo(capX + PIPE_WIDTH + 8, capY);
+        ctx.stroke();
+        
+        // Bottom edge shadow (darker, for depth)
+        ctx.strokeStyle = '#660022'; // Dark red
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(capX + 2, capY + capHeight);
+        ctx.lineTo(capX + PIPE_WIDTH + 8, capY + capHeight);
+        ctx.stroke();
+        
+        // Left side highlight (vertical, for 3D edge)
+        ctx.strokeStyle = '#ffaa66'; // Lighter red/orange
+        ctx.shadowColor = '#ffaa66';
+        ctx.shadowBlur = 6;
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(capX + 7, capY);
+        ctx.lineTo(capX + 7, capY + capHeight);
+        ctx.stroke();
+        
+        // Right side shadow (vertical, for depth)
+        ctx.strokeStyle = '#660022'; // Dark red
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(capX + PIPE_WIDTH + 3, capY);
+        ctx.lineTo(capX + PIPE_WIDTH + 3, capY + capHeight);
+        ctx.stroke();
       }
-      ctx.lineWidth = 10;
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      if (isTop) {
-        // Top pipe cap: highlight on left, slightly offset inward
-        const capY = y + height - capHeight;
-        ctx.moveTo(x + 7, capY);
-        ctx.lineTo(x + 7, capY + capHeight);
-      } else {
-        // Bottom pipe cap: highlight on left, slightly offset inward
-        ctx.moveTo(x + 7, y);
-        ctx.lineTo(x + 7, y + capHeight);
-      }
-      ctx.stroke();
+      
       ctx.shadowBlur = 0;
       ctx.shadowColor = '#00f5ff'; // Reset to default blue for other elements
     }
 
     // Draw background
     function drawBackground() {
-      // Sky gradient
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      gradient.addColorStop(0, 'rgba(10, 5, 25, 0.8)');
-      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
-      ctx.fillStyle = gradient;
+      // Sky gradient (cached for performance)
+      if (!cachedSkyGradient || cachedSkyGradient.height !== canvas.height) {
+        cachedSkyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        cachedSkyGradient.addColorStop(0, 'rgba(10, 5, 25, 0.8)');
+        cachedSkyGradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+      }
+      ctx.fillStyle = cachedSkyGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Parallax stars - use backgroundOffset for smooth parallax effect
-      ctx.fillStyle = '#00f5ff';
-      ctx.shadowColor = '#00f5ff';
-      ctx.shadowBlur = 5;
+      // Parallax stars - use backgroundOffset for smooth parallax effect (more subtle)
+      ctx.fillStyle = 'rgba(0, 245, 255, 0.4)'; // Reduced opacity for stars
+      ctx.shadowColor = 'rgba(0, 245, 255, 0.3)';
+      ctx.shadowBlur = 3; // Reduced glow
       const wrapWidth = canvas.width + 200; // Match the wrap width used for backgroundOffset
       
       // Initialize star positions if not already done
@@ -1698,27 +1916,324 @@
         initializeStarPositions();
       }
       
+      // Pre-calculate offset once
+      const offsetMod = backgroundOffset % wrapWidth;
+      const offsetModNeg = offsetMod < 0 ? offsetMod + wrapWidth : offsetMod;
+      
+      // Batch star drawing for better performance
+      ctx.beginPath();
       for (let i = 0; i < starPositions.length; i++) {
         const star = starPositions[i];
         // Calculate current position with offset, ensuring smooth wrapping
-        let x = star.baseX - (backgroundOffset % wrapWidth);
+        let x = star.baseX - offsetModNeg;
         // Handle wrapping for negative values - use proper modulo to maintain continuity
         if (x < 0) {
           x = x + wrapWidth;
-        }
-        if (x >= wrapWidth) {
+        } else if (x >= wrapWidth) {
           x = x - wrapWidth;
         }
-        const y = star.y;
         // Only draw if visible on canvas (with some margin for smooth scrolling)
         if (x >= -50 && x <= canvas.width + 50) {
-          const size = Math.sin(i + backgroundOffset * 0.01) * 2 + 2;
-          ctx.beginPath();
-          ctx.arc(x, y, size, 0, Math.PI * 2);
-          ctx.fill();
+          // Simplified size calculation (cache sin values or use simpler formula)
+          const size = 2 + (i % 3); // Simpler: 2, 3, or 4 based on index
+          ctx.moveTo(x + size, star.y);
+          ctx.arc(x, star.y, size, 0, Math.PI * 2);
         }
       }
+      ctx.fill();
       ctx.shadowBlur = 0;
+      
+      // Draw cityscape (between stars and pipes for parallax effect)
+      drawCityscape();
+    }
+    
+    // Draw cityscape
+    function drawCityscape() {
+      const groundY = canvas.height - GROUND_HEIGHT;
+      const wrapWidth = canvas.width * 2;
+      
+      // Initialize cityscape if not done
+      if (cityscapeBuildings.length === 0) {
+        initializeCityscape();
+      }
+      
+      // Calculate cityscape offset with parallax
+      let cityX = cityscapeOffset % wrapWidth;
+      if (cityX < 0) {
+        cityX += wrapWidth;
+      }
+      
+      ctx.save();
+      
+      // Reset all context properties to ensure static rendering
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+      
+      // Draw buildings
+      for (let i = 0; i < cityscapeBuildings.length; i++) {
+        const building = cityscapeBuildings[i];
+        let x = building.x - cityX;
+        
+        // Handle wrapping
+        if (x < -building.width) {
+          x += wrapWidth;
+        } else if (x > canvas.width) {
+          x -= wrapWidth;
+        }
+        
+        // Only draw if visible
+        if (x >= -building.width && x <= canvas.width) {
+          // Main building body (slightly lighter silhouette)
+          // Use cached gradient or create once per building width
+          if (!cachedBuildingGradient || cachedBuildingGradient.width !== building.width) {
+            cachedBuildingGradient = ctx.createLinearGradient(0, building.y, building.width, building.y);
+            cachedBuildingGradient.addColorStop(0, 'rgba(10, 15, 25, 1.0)');
+            cachedBuildingGradient.addColorStop(0.5, 'rgba(5, 10, 20, 1.0)');
+            cachedBuildingGradient.addColorStop(1, 'rgba(10, 15, 25, 1.0)');
+          }
+          ctx.fillStyle = cachedBuildingGradient;
+          ctx.fillRect(x, building.y, building.width, building.height);
+          
+          // Subtle building edges (very dark, minimal glow)
+          ctx.strokeStyle = 'rgba(0, 20, 40, 0.4)';
+          ctx.lineWidth = 1;
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+          ctx.strokeRect(x, building.y, building.width, building.height);
+          
+          // Draw windows (subtle, not too bright) - static lighting
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+          for (let window of building.windows) {
+            let windowX = x + (window.x - building.x);
+            if (windowX >= x && windowX <= x + building.width) {
+              if (window.neon && window.neonColor) {
+                // Neon window - more subtle glow
+                const neonColor = window.neonColor;
+                // Convert hex to rgba
+                const r = parseInt(neonColor.substr(1, 2), 16);
+                const g = parseInt(neonColor.substr(3, 2), 16);
+                const b = parseInt(neonColor.substr(5, 2), 16);
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+                ctx.shadowColor = neonColor;
+                ctx.shadowBlur = 4; // Reduced glow
+                ctx.fillRect(windowX, window.y, 8, 12);
+              } else if (window.lit) {
+                // Lit window (subtle glow - not too bright) - static
+                ctx.fillStyle = 'rgba(0, 245, 255, 0.2)';
+                ctx.shadowColor = 'rgba(0, 245, 255, 0.3)';
+                ctx.shadowBlur = 1;
+                ctx.fillRect(windowX, window.y, 8, 12);
+              } else {
+                // Unlit window (very dark) - static
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 0;
+                ctx.shadowColor = 'transparent';
+                ctx.fillRect(windowX, window.y, 8, 12);
+              }
+              // Reset shadow after each window
+              ctx.shadowBlur = 0;
+              ctx.shadowColor = 'transparent';
+            }
+          }
+          
+          // Draw neon signs - vibrant neon colors with strong glow
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+          for (let sign of building.neonSigns) {
+            let signX = x + (sign.x - building.x);
+            if (signX >= x && signX <= x + building.width) {
+              // Convert hex color to rgba for vibrant neon glow
+              const hex = sign.color;
+              const r = parseInt(hex.substr(1, 2), 16);
+              const g = parseInt(hex.substr(3, 2), 16);
+              const b = parseInt(hex.substr(5, 2), 16);
+              
+              // Sign glow - more subtle neon glow
+              ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
+              ctx.shadowColor = sign.color;
+              ctx.shadowBlur = 6; // Reduced glow
+              ctx.fillRect(signX, sign.y, sign.width, sign.height);
+              
+              // Sign text/pattern (more subtle lines) - static
+              ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+              ctx.lineWidth = 1.5;
+              ctx.shadowBlur = 3; // Reduced glow
+              ctx.shadowColor = sign.color;
+              ctx.beginPath();
+              ctx.moveTo(signX + 2, sign.y + sign.height / 2);
+              ctx.lineTo(signX + sign.width - 2, sign.y + sign.height / 2);
+              ctx.stroke();
+              
+              // Reset shadow after each sign
+              ctx.shadowBlur = 0;
+              ctx.shadowColor = 'transparent';
+            }
+          }
+          
+          // Building top accent (more subtle) - static
+          if (building.hasNeonTop) {
+            ctx.fillStyle = 'rgba(0, 245, 255, 0.2)';
+            ctx.shadowColor = 'rgba(0, 245, 255, 0.3)';
+            ctx.shadowBlur = 2;
+            ctx.fillRect(x, building.y, building.width, 2);
+          }
+          
+          // Reset shadow after each building to prevent bleed
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+        }
+      }
+      
+      // Draw street lights
+      for (let i = 0; i < cityscapeStreetLights.length; i++) {
+        const light = cityscapeStreetLights[i];
+        let x = light.x - cityX;
+        
+        // Handle wrapping
+        if (x < -10) {
+          x += wrapWidth;
+        } else if (x > canvas.width) {
+          x -= wrapWidth;
+        }
+        
+        // Only draw if visible
+        if (x >= -10 && x <= canvas.width) {
+          const lightTopY = light.y + light.height;
+          
+          // Light pole (vertical, more visible)
+          ctx.strokeStyle = 'rgba(30, 40, 50, 0.9)';
+          ctx.lineWidth = 3;
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+          ctx.beginPath();
+          ctx.moveTo(x, groundY);
+          ctx.lineTo(x, lightTopY - 10);
+          ctx.stroke();
+          
+          // Horizontal arm extending from pole
+          ctx.strokeStyle = 'rgba(30, 40, 50, 0.9)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, lightTopY - 10);
+          ctx.lineTo(x + 8, lightTopY - 10);
+          ctx.stroke();
+          
+          // Light glow (neon)
+          const hex = light.color;
+          const r = parseInt(hex.substr(1, 2), 16);
+          const g = parseInt(hex.substr(3, 2), 16);
+          const b = parseInt(hex.substr(5, 2), 16);
+          
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+          ctx.shadowColor = light.color;
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(x + 8, lightTopY - 10, 5, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Light top (brighter center)
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1.0)`;
+          ctx.shadowBlur = 15;
+          ctx.beginPath();
+          ctx.arc(x + 8, lightTopY - 10, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Reset shadow
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+        }
+      }
+      
+      // Draw billboards
+      for (let i = 0; i < cityscapeBillboards.length; i++) {
+        const billboard = cityscapeBillboards[i];
+        let x = billboard.x - cityX;
+        
+        // Handle wrapping
+        if (x < -billboard.width) {
+          x += wrapWidth;
+        } else if (x > canvas.width) {
+          x -= wrapWidth;
+        }
+        
+        // Only draw if visible
+        if (x >= -billboard.width && x <= canvas.width) {
+          // Billboard support posts (dark)
+          ctx.strokeStyle = 'rgba(20, 30, 40, 0.8)';
+          ctx.lineWidth = 2;
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+          ctx.beginPath();
+          ctx.moveTo(x + 5, groundY);
+          ctx.lineTo(x + 5, billboard.y + billboard.height);
+          ctx.moveTo(x + billboard.width - 5, groundY);
+          ctx.lineTo(x + billboard.width - 5, billboard.y + billboard.height);
+          ctx.stroke();
+          
+          // Billboard background (dark)
+          ctx.fillStyle = 'rgba(5, 10, 20, 0.9)';
+          ctx.fillRect(x, billboard.y, billboard.width, billboard.height);
+          
+          // Billboard border (neon)
+          const hex = billboard.color;
+          const r = parseInt(hex.substr(1, 2), 16);
+          const g = parseInt(hex.substr(3, 2), 16);
+          const b = parseInt(hex.substr(5, 2), 16);
+          
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+          ctx.lineWidth = 2;
+          ctx.shadowColor = billboard.color;
+          ctx.shadowBlur = 4;
+          ctx.strokeRect(x, billboard.y, billboard.width, billboard.height);
+          
+          // Billboard text (neon glow effect)
+          if (billboard.text) {
+            // Add padding around text
+            const padding = 6;
+            const textAreaWidth = billboard.width - (padding * 2);
+            const textAreaHeight = billboard.height - (padding * 2);
+            
+            // Calculate font size based on available text area and text length
+            const baseFontSize = Math.min(textAreaHeight * 0.6, textAreaWidth / (billboard.text.length * 0.6));
+            
+            // Use the assigned font for this billboard, or default to Arial bold
+            const fontInfo = billboard.font || { family: 'Arial', weight: 'bold', style: 'normal' };
+            const styleStr = fontInfo.style !== 'normal' ? fontInfo.style + ' ' : '';
+            ctx.font = `${styleStr}${fontInfo.weight} ${Math.floor(baseFontSize)}px ${fontInfo.family}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.9)`;
+            ctx.shadowColor = billboard.color;
+            ctx.shadowBlur = 6;
+            // Draw text centered on billboard with padding
+            ctx.fillText(
+              billboard.text,
+              x + billboard.width / 2,
+              billboard.y + billboard.height / 2
+            );
+          } else {
+            // Fallback to lines if no text (shouldn't happen, but just in case)
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+            ctx.lineWidth = 1.5;
+            ctx.shadowBlur = 3;
+            ctx.beginPath();
+            ctx.moveTo(x + 5, billboard.y + billboard.height * 0.3);
+            ctx.lineTo(x + billboard.width - 5, billboard.y + billboard.height * 0.3);
+            ctx.moveTo(x + 5, billboard.y + billboard.height * 0.5);
+            ctx.lineTo(x + billboard.width - 5, billboard.y + billboard.height * 0.5);
+            ctx.moveTo(x + 5, billboard.y + billboard.height * 0.7);
+            ctx.lineTo(x + billboard.width - 5, billboard.y + billboard.height * 0.7);
+            ctx.stroke();
+          }
+          
+          // Reset shadow
+          ctx.shadowBlur = 0;
+          ctx.shadowColor = 'transparent';
+        }
+      }
+      
+      ctx.restore();
     }
 
     // Draw ground
@@ -1791,6 +2306,24 @@
       const deltaTime = Math.min((currentTime - lastTime) / 16.67, 2.0); // Cap at 2x normal speed
       lastTime = currentTime;
       
+      // Update window lighting dynamically (every few seconds)
+      if (currentTime - lastWindowUpdate >= WINDOW_UPDATE_INTERVAL) {
+        lastWindowUpdate = currentTime;
+        // Randomly toggle 1-2 windows per building
+        for (let building of cityscapeBuildings) {
+          // Get all non-neon windows for this building
+          const nonNeonWindows = building.windows.filter(w => !w.neon);
+          if (nonNeonWindows.length > 0) {
+            // Toggle 1-2 random windows
+            const numToToggle = Math.random() > 0.5 ? 1 : 2;
+            const shuffled = [...nonNeonWindows].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < Math.min(numToToggle, shuffled.length); i++) {
+              shuffled[i].lit = !shuffled[i].lit;
+            }
+          }
+        }
+      }
+      
       // Only increment frameCount when playing (so background doesn't move when paused)
       if (gameState === 'playing') {
         frameCount += deltaTime;
@@ -1803,11 +2336,43 @@
         if (backgroundOffset > maxOffset) {
           backgroundOffset = backgroundOffset % maxOffset;
         }
+        // Update cityscape offset (between stars and pipes)
+        cityscapeOffset += pipeSpeed * deltaTime * CITYSCAPE_PARALLAX_FACTOR;
+        const cityscapeWrapWidth = canvas.width * 2;
+        if (cityscapeOffset > cityscapeWrapWidth * 1000) {
+          cityscapeOffset = cityscapeOffset % (cityscapeWrapWidth * 1000);
+        }
         // Update ground offset - moves at same speed as pipes for consistent movement
         groundOffset += pipeSpeed * deltaTime;
         // Wrap around to prevent overflow
         if (groundOffset > 2000) {
           groundOffset = groundOffset % 2000;
+        }
+        
+        // Spawn planes occasionally
+        if (currentTime - lastPlaneSpawn >= PLANE_SPAWN_INTERVAL) {
+          lastPlaneSpawn = currentTime;
+          // Random chance to spawn (60% chance)
+          if (Math.random() > 0.4) {
+            const groundY = canvas.height - GROUND_HEIGHT;
+            const planeY = 50 + Math.random() * (groundY - 150); // Random height, avoid ground and top
+            const neonColors = ['#00f5ff', '#ff00ff', '#ffff00', '#00ff88'];
+            planes.push({
+              x: canvas.width + 30, // Start off-screen right
+              y: planeY,
+              color: neonColors[Math.floor(Math.random() * neonColors.length)],
+              size: 15 + Math.random() * 10 // 15-25px size
+            });
+          }
+        }
+        
+        // Update planes (move left)
+        for (let i = planes.length - 1; i >= 0; i--) {
+          planes[i].x -= PLANE_SPEED * deltaTime;
+          // Remove planes that are off-screen
+          if (planes[i].x + planes[i].size < 0) {
+            planes.splice(i, 1);
+          }
         }
       }
       animationFrame = requestAnimationFrame(gameLoop);
@@ -1817,6 +2382,9 @@
 
       // Draw background
       drawBackground();
+      
+      // Draw planes (behind pipes but in front of buildings)
+      drawPlanes();
       
       // Draw ground
       drawGround();
@@ -1954,25 +2522,13 @@
           }
         }
 
-        // Draw pipes (only if enabled) - transparent only when falling (last life)
+        // Draw pipes (only if enabled)
         if (pipesEnabled) {
           const groundY = canvas.height - GROUND_HEIGHT;
-          if (gameState === 'falling') {
-            // Draw pipes transparent when falling (last life lost)
-            ctx.save();
-            ctx.globalAlpha = 0.3;
-            pipes.forEach(pipe => {
-              drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
-              drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
-            });
-            ctx.restore();
-          } else {
-            // Draw pipes normally (including during ghost mode)
-            pipes.forEach(pipe => {
-              drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
-              drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
-            });
-          }
+          pipes.forEach(pipe => {
+            drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
+            drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
+          });
         }
       } else if (gameState === 'paused') {
         // Draw pipes (static) when paused (only if enabled)
@@ -1983,34 +2539,84 @@
             drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
           });
         }
-      } else if (gameState === 'falling') {
-        // Draw pipes (transparent) when falling - immediately after collision
+      } else if (gameState === 'falling' || gameState === 'gameover') {
+        // Draw pipes normally when falling or gameover
         if (pipesEnabled) {
           const groundY = canvas.height - GROUND_HEIGHT;
-          ctx.save();
-          ctx.globalAlpha = 0.3; // Make pipes transparent immediately
           pipes.forEach(pipe => {
             drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
             drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
           });
-          ctx.restore();
-        }
-      } else if (gameState === 'gameover') {
-        // Draw pipes (transparent) when gameover so text is readable
-        if (pipesEnabled) {
-          const groundY = canvas.height - GROUND_HEIGHT;
-          ctx.save();
-          ctx.globalAlpha = 0.3; // Make pipes more transparent
-          pipes.forEach(pipe => {
-            drawPipe(pipe.x, 0, pipe.topHeight, true, pipe.scored);
-            drawPipe(pipe.x, pipe.bottomY, groundY - pipe.bottomY, false, pipe.scored);
-          });
-          ctx.restore();
         }
       }
 
       // Draw bird
       drawBird();
+    }
+    
+    // Draw planes
+    function drawPlanes() {
+      for (let plane of planes) {
+        ctx.save();
+        
+        const hex = plane.color;
+        const r = parseInt(hex.substr(1, 2), 16);
+        const g = parseInt(hex.substr(3, 2), 16);
+        const b = parseInt(hex.substr(5, 2), 16);
+        
+        // Plane body (main fuselage)
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+        ctx.shadowColor = plane.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.ellipse(plane.x, plane.y, plane.size * 0.6, plane.size * 0.3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Wings (cyberpunk style - angular)
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.6)`;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        // Top wing
+        ctx.moveTo(plane.x - plane.size * 0.3, plane.y - plane.size * 0.2);
+        ctx.lineTo(plane.x - plane.size * 0.8, plane.y - plane.size * 0.6);
+        ctx.lineTo(plane.x - plane.size * 0.5, plane.y - plane.size * 0.3);
+        ctx.closePath();
+        ctx.fill();
+        // Bottom wing
+        ctx.beginPath();
+        ctx.moveTo(plane.x - plane.size * 0.3, plane.y + plane.size * 0.2);
+        ctx.lineTo(plane.x - plane.size * 0.8, plane.y + plane.size * 0.6);
+        ctx.lineTo(plane.x - plane.size * 0.5, plane.y + plane.size * 0.3);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Cockpit/light (brighter)
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1.0)`;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(plane.x + plane.size * 0.2, plane.y, plane.size * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Tail fin
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.7)`;
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        ctx.moveTo(plane.x - plane.size * 0.6, plane.y);
+        ctx.lineTo(plane.x - plane.size * 0.9, plane.y - plane.size * 0.4);
+        ctx.lineTo(plane.x - plane.size * 0.7, plane.y);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Engine glow (trail)
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.3)`;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = plane.color;
+        ctx.beginPath();
+        ctx.ellipse(plane.x - plane.size * 0.8, plane.y, plane.size * 0.4, plane.size * 0.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+      }
     }
 
     // Collision detection
@@ -2358,10 +2964,14 @@
         bird.blinking = false; // Reset blink state
         bird.nextBlinkTime = 0; // Reset blink timer
         pipes = [];
+        planes = []; // Reset planes
         score = 0;
         frameCount = 0;
         backgroundOffset = 0; // Reset parallax offset
+        cityscapeOffset = 0; // Reset cityscape offset
         groundOffset = 0; // Reset ground offset
+        lastWindowUpdate = performance.now(); // Reset window update timer
+        lastPlaneSpawn = performance.now(); // Reset plane spawn timer
         currentLives = maxLives; // Reset lives
         updateLivesDisplay();
         lastTime = performance.now(); // Reset time tracking
