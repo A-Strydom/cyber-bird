@@ -796,34 +796,6 @@
       box-shadow: 0 0 25px rgba(255, 235, 59, 0.5);
       text-shadow: 0 0 15px #ffeb3b;
     }
-    .menu-close {
-      position: absolute;
-      top: -5px;
-      right: 10px;
-      background: transparent;
-      border: none;
-      color: #00f5ff;
-      font-family: 'Material Icons';
-      font-size: 28px;
-      width: 36px;
-      height: 36px;
-      padding: 0;
-      cursor: pointer;
-      text-shadow: 0 0 8px #00f5ff;
-      transition: all 0.3s ease;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-      z-index: 10;
-    }
-    .menu-close:hover {
-      background: rgba(0, 245, 255, 0.1);
-      color: #ffeb3b;
-      text-shadow: 0 0 15px #ffeb3b;
-      transform: scale(1.1);
-    }
     @media (max-width: 768px) {
       .game-title {
         top: 15px;
@@ -930,7 +902,7 @@
   </div>
   <div id="game-container">
     <div class="game-controls">
-      <button id="restart" title="Restart"><span class="material-icons">power_settings_new</span></button>
+      <button id="restart" title="Restart"><span class="material-icons">refresh</span></button>
       <div class="score-display">
         <strong id="score">0</strong>
         <div class="lives-display" id="livesDisplay">
@@ -956,7 +928,6 @@
                 <span>SETTINGS</span>
               </button>
             </div>
-            <button class="menu-close" id="menuClose"><span class="material-icons">close</span></button>
           </div>
           <div class="menu-scrollable">
             <!-- No scrollable content for main menu -->
@@ -1028,7 +999,7 @@
             <div class="setting-item">
               <span class="setting-label">Lives</span>
               <div class="setting-input">
-                <input type="number" id="livesInput" min="1" max="10" step="1" value="3">
+                <input type="number" id="livesInput" min="1" max="10" step="1" value="1">
               </div>
             </div>
             <div class="setting-item">
@@ -1073,7 +1044,6 @@
     const pauseBtn = document.getElementById('pauseBtn');
     const menuBtn = document.getElementById('menuBtn');
     const menuModal = document.getElementById('menuModal');
-    const menuClose = document.getElementById('menuClose');
     const pipesToggle = document.getElementById('pipesToggle');
     const mainMenuScreen = document.getElementById('mainMenuScreen');
     const howToPlayScreen = document.getElementById('howToPlayScreen');
@@ -1110,8 +1080,8 @@
     // Game state
     let gameState = 'paused'; // 'paused', 'playing', 'falling', 'gameover'
     let pipesEnabled = true; // Setting to enable/disable pipes
-    let maxLives = 3; // Default number of lives
-    let currentLives = 3; // Current lives remaining
+    let maxLives = 1; // Default number of lives
+    let currentLives = 1; // Current lives remaining
     let ghostDuration = 3000; // Default ghost duration in milliseconds (3 seconds)
     let bird = {
       x: 100,
@@ -1123,7 +1093,10 @@
       wingFlapDecay: 0,
       glitching: false,
       ghosting: false,
-      ghostEndTime: 0
+      ghostEndTime: 0,
+      blinking: false,
+      blinkStartTime: 0,
+      nextBlinkTime: 0
     };
     let pipes = [];
     let score = 0;
@@ -1141,6 +1114,7 @@
     const GROUND_HEIGHT = 20; // Height of the ground element
     let groundPatternCanvas = null; // Cached pattern canvas for performance
     let groundPatternCached = false; // Flag to check if pattern is cached
+    let starPositions = []; // Array to store random star positions
     let spaceHeld = false;
     let mouseHeld = false;
     let lastJumpTime = 0;
@@ -1162,6 +1136,20 @@
       
       // Invalidate ground pattern cache when canvas resizes
       groundPatternCached = false;
+      // Regenerate star positions when canvas resizes
+      initializeStarPositions();
+    }
+    
+    // Initialize random star positions
+    function initializeStarPositions() {
+      starPositions = [];
+      const wrapWidth = canvas.width + 200;
+      for (let i = 0; i < 50; i++) {
+        starPositions.push({
+          baseX: Math.random() * wrapWidth,
+          y: Math.random() * canvas.height
+        });
+      }
     }
 
     resizeCanvas();
@@ -1182,9 +1170,9 @@
       
       // Draw pattern on cached canvas
       patternCtx.strokeStyle = '#00f5ff';
-      patternCtx.lineWidth = 4;
+      patternCtx.lineWidth = 2;
       patternCtx.shadowColor = '#00f5ff';
-      patternCtx.shadowBlur = 2;
+      patternCtx.shadowBlur = 4;
       patternCtx.globalAlpha = 0.5;
       
       // Draw all ">" patterns
@@ -1367,6 +1355,30 @@
         ctx.globalAlpha = 1.0;
       }
 
+      // Handle blinking animation
+      const currentTime = performance.now();
+      const BLINK_DURATION = 150; // milliseconds for a blink
+      const MIN_BLINK_INTERVAL = 1000; // Minimum time between blinks (2 seconds)
+      const MAX_BLINK_INTERVAL = 2000; // Maximum time between blinks (5 seconds)
+      
+      // Initialize next blink time if not set
+      if (bird.nextBlinkTime === 0) {
+        bird.nextBlinkTime = currentTime + MIN_BLINK_INTERVAL + Math.random() * (MAX_BLINK_INTERVAL - MIN_BLINK_INTERVAL);
+      }
+      
+      // Check if it's time to start a blink
+      if (!bird.blinking && currentTime >= bird.nextBlinkTime) {
+        bird.blinking = true;
+        bird.blinkStartTime = currentTime;
+      }
+      
+      // Check if blink should end
+      if (bird.blinking && currentTime - bird.blinkStartTime >= BLINK_DURATION) {
+        bird.blinking = false;
+        // Schedule next random blink
+        bird.nextBlinkTime = currentTime + MIN_BLINK_INTERVAL + Math.random() * (MAX_BLINK_INTERVAL - MIN_BLINK_INTERVAL);
+      }
+
       // Wing animation (continuously flapping when playing)
       // Note: Wing animation is frame-based for smooth visual effect
       if (gameState === 'playing' || gameState === 'paused') {
@@ -1421,18 +1433,29 @@
 
       // Eye (on the right side, facing forward) - always drawn last so it's always on top
       ctx.shadowBlur = 0;
-      ctx.fillStyle = '#00f5ff';
-      ctx.beginPath();
-      ctx.arc(8, -5, 6, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Eye glow
-      ctx.shadowColor = '#ffeb3b';
-      ctx.shadowBlur = 10;
-      ctx.fillStyle = '#00aacc';
-      ctx.beginPath();
-      ctx.arc(8, -5, 4, 0, Math.PI * 2);
-      ctx.fill();
+      if (bird.blinking) {
+        // Draw closed eye (horizontal line) when blinking
+        ctx.strokeStyle = '#00f5ff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(8 - 5, -5);
+        ctx.lineTo(8 + 5, -5);
+        ctx.stroke();
+      } else {
+        // Draw open eye (circle)
+        ctx.fillStyle = '#00f5ff';
+        ctx.beginPath();
+        ctx.arc(8, -5, 6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Eye glow
+        ctx.shadowColor = '#ffeb3b';
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = '#00aacc';
+        ctx.beginPath();
+        ctx.arc(8, -5, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // Wing (on the right side, base fixed, tip moves upward)
       // Drawn after lines so it appears on top of them
@@ -1588,19 +1611,26 @@
       ctx.fillStyle = '#00f5ff';
       ctx.shadowColor = '#00f5ff';
       ctx.shadowBlur = 5;
-      const wrapWidth = canvas.width + 100;
-      for (let i = 0; i < 50; i++) {
-        // Use backgroundOffset for parallax movement (wraps around canvas width)
-        // Subtract offset to make stars move left (matching pipe direction)
-        const baseX = (i * 37) % wrapWidth;
-        let x = baseX - backgroundOffset;
-        // Handle wrapping for negative values
-        while (x < 0) {
-          x += wrapWidth;
+      const wrapWidth = canvas.width + 200; // Match the wrap width used for backgroundOffset
+      
+      // Initialize star positions if not already done
+      if (starPositions.length === 0) {
+        initializeStarPositions();
+      }
+      
+      for (let i = 0; i < starPositions.length; i++) {
+        const star = starPositions[i];
+        // Calculate current position with offset, ensuring smooth wrapping
+        let x = star.baseX - (backgroundOffset % wrapWidth);
+        // Handle wrapping for negative values - use proper modulo to maintain continuity
+        if (x < 0) {
+          x = x + wrapWidth;
         }
-        x = x % wrapWidth;
-        const y = (i * 73) % canvas.height;
-        // Only draw if visible on canvas
+        if (x >= wrapWidth) {
+          x = x - wrapWidth;
+        }
+        const y = star.y;
+        // Only draw if visible on canvas (with some margin for smooth scrolling)
         if (x >= -50 && x <= canvas.width + 50) {
           const size = Math.sin(i + backgroundOffset * 0.01) * 2 + 2;
           ctx.beginPath();
@@ -1616,7 +1646,7 @@
       const groundY = canvas.height - GROUND_HEIGHT;
       
       // Ground fill background (solid base color - visible behind everything)
-      ctx.fillStyle = '#4952BE';
+      ctx.fillStyle = '#006699';
       ctx.fillRect(0, groundY, canvas.width, GROUND_HEIGHT);
       
       // Ground base gradient (semi-transparent overlay to show base through)
@@ -1687,9 +1717,11 @@
         // Update parallax background offset based on pipe speed
         // Background moves slower than pipes for parallax effect
         backgroundOffset += pipeSpeed * deltaTime * PARALLAX_FACTOR;
-        // Wrap around to prevent overflow (using a large wrap value)
-        if (backgroundOffset > canvas.width + 200) {
-          backgroundOffset = backgroundOffset % (canvas.width + 200);
+        // Don't wrap the offset - let it grow indefinitely and use modulo in star calculation
+        // This prevents discontinuities when wrapping
+        const maxOffset = (canvas.width + 200) * 1000; // Very large number to prevent overflow
+        if (backgroundOffset > maxOffset) {
+          backgroundOffset = backgroundOffset % maxOffset;
         }
         // Update ground offset - moves at same speed as pipes for consistent movement
         groundOffset += pipeSpeed * deltaTime;
@@ -2050,7 +2082,7 @@
 
     // Update lives setting
     function updateLives() {
-      maxLives = parseInt(livesInput.value) || 3;
+      maxLives = parseInt(livesInput.value) || 1;
       if (maxLives < 1) maxLives = 1;
       if (maxLives > 10) maxLives = 10;
       livesInput.value = maxLives;
@@ -2099,7 +2131,7 @@
       pipeSpacing = DEFAULT_PIPE_SPACING;
       pipeGap = DEFAULT_PIPE_GAP;
       pipeSpeed = DEFAULT_PIPE_SPEED;
-      maxLives = 3;
+      maxLives = 1;
       ghostDuration = 3000;
       
       // Update UI
@@ -2107,7 +2139,7 @@
       pipeSpacingInput.value = DEFAULT_PIPE_SPACING;
       pipeGapInput.value = DEFAULT_PIPE_GAP;
       pipeSpeedInput.value = DEFAULT_PIPE_SPEED;
-      livesInput.value = 3;
+      livesInput.value = 1;
       ghostDurationInput.value = 3000;
       
       // Reset lives
@@ -2122,7 +2154,7 @@
       localStorage.setItem('pipeSpacing', DEFAULT_PIPE_SPACING.toString());
       localStorage.setItem('pipeGap', DEFAULT_PIPE_GAP.toString());
       localStorage.setItem('pipeSpeed', DEFAULT_PIPE_SPEED.toString());
-      localStorage.setItem('maxLives', '3');
+      localStorage.setItem('maxLives', '1');
       localStorage.setItem('ghostDuration', '3000');
     }
 
@@ -2154,7 +2186,7 @@
       
       const savedLives = localStorage.getItem('maxLives');
       if (savedLives !== null) {
-        maxLives = parseInt(savedLives) || 3;
+        maxLives = parseInt(savedLives) || 1;
         livesInput.value = maxLives;
       }
       currentLives = maxLives;
@@ -2216,6 +2248,8 @@
       bird.wingFlapDecay = 0; // Reset wing flap decay
       bird.glitching = false; // Reset glitch state
       bird.ghosting = false; // Reset ghost mode
+      bird.blinking = false; // Reset blink state
+      bird.nextBlinkTime = 0; // Reset blink timer
       
       // Add glitch animations
       restartBtn.classList.add('glitch');
@@ -2241,6 +2275,8 @@
         bird.wingFlapping = false; // Reset wing flapping state
         bird.wingFlapDecay = 0; // Reset wing flap decay
         bird.ghosting = false; // Reset ghost mode
+        bird.blinking = false; // Reset blink state
+        bird.nextBlinkTime = 0; // Reset blink timer
         pipes = [];
         score = 0;
         frameCount = 0;
@@ -2279,7 +2315,6 @@
     restartGameBtn.addEventListener('click', restartGame);
     pauseBtn.addEventListener('click', togglePause);
     menuBtn.addEventListener('click', showMenu);
-    menuClose.addEventListener('click', hideMenu);
     howToPlayBtn.addEventListener('click', showHowToPlay);
     settingsBtn.addEventListener('click', showSettings);
     backFromHowToPlay.addEventListener('click', showMainMenu);
