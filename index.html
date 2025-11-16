@@ -752,6 +752,44 @@
       box-shadow: 0 0 15px rgba(255, 235, 59, 0.5);
       color: #ffeb3b;
     }
+    .setting-input-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .setting-input-btn {
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #00f5ff;
+      color: #00f5ff;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      width: 28px;
+      height: 20px;
+      padding: 0;
+      cursor: pointer;
+      border-radius: 3px;
+      text-shadow: 0 0 6px #00f5ff;
+      box-shadow: 0 0 8px rgba(0, 245, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      transition: all 0.2s ease;
+    }
+    .setting-input-btn:hover {
+      border-color: #ffeb3b;
+      color: #ffeb3b;
+      box-shadow: 0 0 12px rgba(255, 235, 59, 0.5);
+      text-shadow: 0 0 8px #ffeb3b;
+    }
+    .setting-input-btn:active {
+      transform: scale(0.95);
+    }
+    .setting-input-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      border-color: rgba(0, 245, 255, 0.3);
+    }
     .reset-highscore {
       background: transparent;
       border: 2px solid #ff6b6b;
@@ -986,6 +1024,10 @@
             <div class="setting-item">
               <span class="setting-label">Pipe Spacing</span>
               <div class="setting-input">
+                <div class="setting-input-controls">
+                  <button class="setting-input-btn" data-input="pipeSpacingInput" data-action="increment">+</button>
+                  <button class="setting-input-btn" data-input="pipeSpacingInput" data-action="decrement">−</button>
+                </div>
                 <input type="number" id="pipeSpacingInput" min="150" max="500" step="10" value="250">
                 <span style="color: #00f5ff; font-family: 'Share Tech Mono', monospace;">px</span>
               </div>
@@ -993,6 +1035,10 @@
             <div class="setting-item">
               <span class="setting-label">Pipe Gap</span>
               <div class="setting-input">
+                <div class="setting-input-controls">
+                  <button class="setting-input-btn" data-input="pipeGapInput" data-action="increment">+</button>
+                  <button class="setting-input-btn" data-input="pipeGapInput" data-action="decrement">−</button>
+                </div>
                 <input type="number" id="pipeGapInput" min="100" max="300" step="10" value="180">
                 <span style="color: #00f5ff; font-family: 'Share Tech Mono', monospace;">px</span>
               </div>
@@ -1000,6 +1046,10 @@
             <div class="setting-item">
               <span class="setting-label">Pipe Speed</span>
               <div class="setting-input">
+                <div class="setting-input-controls">
+                  <button class="setting-input-btn" data-input="pipeSpeedInput" data-action="increment">+</button>
+                  <button class="setting-input-btn" data-input="pipeSpeedInput" data-action="decrement">−</button>
+                </div>
                 <input type="number" id="pipeSpeedInput" min="1" max="10" step="0.5" value="3">
                 <span style="color: #00f5ff; font-family: 'Share Tech Mono', monospace;">px/frame</span>
               </div>
@@ -1007,12 +1057,20 @@
             <div class="setting-item">
               <span class="setting-label">Lives</span>
               <div class="setting-input">
+                <div class="setting-input-controls">
+                  <button class="setting-input-btn" data-input="livesInput" data-action="increment">+</button>
+                  <button class="setting-input-btn" data-input="livesInput" data-action="decrement">−</button>
+                </div>
                 <input type="number" id="livesInput" min="1" max="10" step="1" value="1">
               </div>
             </div>
             <div class="setting-item">
               <span class="setting-label">Ghost Duration</span>
               <div class="setting-input">
+                <div class="setting-input-controls">
+                  <button class="setting-input-btn" data-input="ghostDurationInput" data-action="increment">+</button>
+                  <button class="setting-input-btn" data-input="ghostDurationInput" data-action="decrement">−</button>
+                </div>
                 <input type="number" id="ghostDurationInput" min="500" max="5000" step="100" value="3000">
                 <span style="color: #00f5ff; font-family: 'Share Tech Mono', monospace;">ms</span>
               </div>
@@ -1412,6 +1470,12 @@
             this.playTone(freq, 0.2, 'sawtooth', 0.3);
           }, index * 100);
         });
+      },
+      
+      async playDisconnect() {
+        await this.ensureResumed();
+        // First part of crash sound - shorter disconnect
+        this.playTone(300, 0.15, 'sawtooth', 0.3);
       },
       
       async playReboot() {
@@ -2662,6 +2726,9 @@
       localStorage.setItem('pipeSpeed', DEFAULT_PIPE_SPEED.toString());
       localStorage.setItem('maxLives', '1');
       localStorage.setItem('ghostDuration', '3000');
+      
+      // Update button states
+      updateInputButtonStates();
     }
 
     // Load settings from localStorage
@@ -2715,6 +2782,9 @@
         ghostDuration = parseInt(savedGhostDuration) || 3000;
         ghostDurationInput.value = ghostDuration;
       }
+      
+      // Update button states
+      updateInputButtonStates();
     }
 
     // Game over
@@ -2730,7 +2800,7 @@
       if (currentLives > 0) {
         // Brief pause to show collision
         gameState = 'paused';
-        SoundManager.playCrash();
+        SoundManager.playDisconnect();
         
         // Activate ghost mode after short delay (bird continues from current position)
         setTimeout(() => {
@@ -2842,16 +2912,120 @@
     pipesToggle.addEventListener('click', togglePipes);
     cityscapeToggle.addEventListener('click', toggleCityscape);
     starsToggle.addEventListener('click', toggleStars);
-    pipeSpacingInput.addEventListener('change', updatePipeSettings);
-    pipeSpacingInput.addEventListener('input', updatePipeSettings);
-    pipeGapInput.addEventListener('change', updatePipeSettings);
-    pipeGapInput.addEventListener('input', updatePipeSettings);
-    pipeSpeedInput.addEventListener('change', updatePipeSettings);
-    pipeSpeedInput.addEventListener('input', updatePipeSettings);
-    livesInput.addEventListener('change', updateLives);
-    livesInput.addEventListener('input', updateLives);
-    ghostDurationInput.addEventListener('change', updateGhostDuration);
-    ghostDurationInput.addEventListener('input', updateGhostDuration);
+    // Update button states based on input values
+    function updateInputButtonStates() {
+      document.querySelectorAll('.setting-input-btn').forEach(btn => {
+        const inputId = btn.getAttribute('data-input');
+        const action = btn.getAttribute('data-action');
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        
+        const value = parseFloat(input.value) || 0;
+        const min = parseFloat(input.min) || 0;
+        const max = parseFloat(input.max) || Infinity;
+        const step = parseFloat(input.step) || 1;
+        
+        if (action === 'increment') {
+          btn.disabled = value >= max;
+        } else if (action === 'decrement') {
+          btn.disabled = value <= min;
+        }
+      });
+    }
+
+    // Handle increment/decrement button clicks
+    function handleInputButtonClick(e) {
+      const inputId = e.target.getAttribute('data-input');
+      const action = e.target.getAttribute('data-action');
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      
+      const currentValue = parseFloat(input.value) || 0;
+      const step = parseFloat(input.step) || 1;
+      const min = parseFloat(input.min) || 0;
+      const max = parseFloat(input.max) || Infinity;
+      
+      let newValue;
+      if (action === 'increment') {
+        newValue = Math.min(currentValue + step, max);
+      } else if (action === 'decrement') {
+        newValue = Math.max(currentValue - step, min);
+      } else {
+        return;
+      }
+      
+      // Round to appropriate decimal places based on step
+      const stepDecimals = step.toString().split('.')[1]?.length || 0;
+      newValue = parseFloat(newValue.toFixed(stepDecimals));
+      
+      input.value = newValue;
+      
+      // Trigger the appropriate update function
+      if (inputId === 'pipeSpacingInput' || inputId === 'pipeGapInput' || inputId === 'pipeSpeedInput') {
+        updatePipeSettings();
+      } else if (inputId === 'livesInput') {
+        updateLives();
+      } else if (inputId === 'ghostDurationInput') {
+        updateGhostDuration();
+      }
+      
+      // Update button states
+      updateInputButtonStates();
+    }
+
+    // Add event listeners for increment/decrement buttons
+    document.querySelectorAll('.setting-input-btn').forEach(btn => {
+      btn.addEventListener('click', handleInputButtonClick);
+    });
+
+    // Update button states when inputs change
+    function setupInputListeners() {
+      pipeSpacingInput.addEventListener('change', () => {
+        updatePipeSettings();
+        updateInputButtonStates();
+      });
+      pipeSpacingInput.addEventListener('input', () => {
+        updatePipeSettings();
+        updateInputButtonStates();
+      });
+      pipeGapInput.addEventListener('change', () => {
+        updatePipeSettings();
+        updateInputButtonStates();
+      });
+      pipeGapInput.addEventListener('input', () => {
+        updatePipeSettings();
+        updateInputButtonStates();
+      });
+      pipeSpeedInput.addEventListener('change', () => {
+        updatePipeSettings();
+        updateInputButtonStates();
+      });
+      pipeSpeedInput.addEventListener('input', () => {
+        updatePipeSettings();
+        updateInputButtonStates();
+      });
+      livesInput.addEventListener('change', () => {
+        updateLives();
+        updateInputButtonStates();
+      });
+      livesInput.addEventListener('input', () => {
+        updateLives();
+        updateInputButtonStates();
+      });
+      ghostDurationInput.addEventListener('change', () => {
+        updateGhostDuration();
+        updateInputButtonStates();
+      });
+      ghostDurationInput.addEventListener('input', () => {
+        updateGhostDuration();
+        updateInputButtonStates();
+      });
+    }
+    
+    setupInputListeners();
+    
+    // Initialize button states
+    updateInputButtonStates();
     resetHighscoreBtn.addEventListener('click', resetHighscore);
     resetSettingsBtn.addEventListener('click', resetAllSettings);
     
