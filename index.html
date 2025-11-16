@@ -1382,6 +1382,14 @@
           const soundPref = localStorage.getItem('soundEnabled');
           this.enabled = soundPref === null ? true : soundPref === 'true';
           this.updateButton();
+          
+          // Listen for audio context state changes and auto-resume if suspended
+          this.audioContext.addEventListener('statechange', () => {
+            if (this.audioContext && this.audioContext.state === 'suspended' && this.hasUserInteracted) {
+              // Try to resume when state changes to suspended
+              this.ensureResumed().catch(() => {});
+            }
+          });
         } catch (e) {
           console.warn('Web Audio API not supported:', e);
           this.enabled = false;
@@ -1410,7 +1418,22 @@
           if (!this.hasUserInteracted) return;
           try {
             await this.audioContext.resume();
-          } catch (e) {}
+            // If still suspended after resume attempt, try again after a short delay
+            if (this.audioContext.state === 'suspended') {
+              setTimeout(() => {
+                if (this.audioContext && this.audioContext.state === 'suspended' && this.hasUserInteracted) {
+                  this.audioContext.resume().catch(() => {});
+                }
+              }, 100);
+            }
+          } catch (e) {
+            // If resume fails, try again after a short delay
+            setTimeout(() => {
+              if (this.audioContext && this.audioContext.state === 'suspended' && this.hasUserInteracted) {
+                this.audioContext.resume().catch(() => {});
+              }
+            }, 100);
+          }
         }
       },
       
@@ -1499,17 +1522,33 @@
     // Resume audio on user interaction
     let audioContextResumed = false;
     function resumeAudioOnInteraction() {
-      if (!audioContextResumed && SoundManager.audioContext) {
-        audioContextResumed = true;
+      if (SoundManager.audioContext) {
+        if (!audioContextResumed) {
+          audioContextResumed = true;
+        }
         SoundManager.hasUserInteracted = true;
         SoundManager.ensureResumed().catch(() => {});
       }
     }
     
-    document.addEventListener('touchstart', resumeAudioOnInteraction, { once: true, passive: true, capture: true });
-    document.addEventListener('click', resumeAudioOnInteraction, { once: true, capture: true });
-    document.addEventListener('keydown', resumeAudioOnInteraction, { once: true, capture: true });
-
+    // Add persistent listeners (not once) so audio can resume if suspended again
+    document.addEventListener('touchstart', resumeAudioOnInteraction, { passive: true, capture: true });
+    document.addEventListener('click', resumeAudioOnInteraction, { capture: true });
+    document.addEventListener('keydown', resumeAudioOnInteraction, { capture: true });
+    
+    // Resume audio when page becomes visible again (e.g., returning from background)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && SoundManager.audioContext && SoundManager.hasUserInteracted) {
+        SoundManager.ensureResumed().catch(() => {});
+      }
+    });
+    
+    // Resume audio when window gains focus
+    window.addEventListener('focus', () => {
+      if (SoundManager.audioContext && SoundManager.hasUserInteracted) {
+        SoundManager.ensureResumed().catch(() => {});
+      }
+    });
     // Draw cyber bird
     function drawBird() {
       ctx.save();
