@@ -976,6 +976,14 @@
               <div class="toggle-switch active" id="pipesToggle"></div>
             </div>
             <div class="setting-item">
+              <span class="setting-label">Enable Cityscape</span>
+              <div class="toggle-switch active" id="cityscapeToggle"></div>
+            </div>
+            <div class="setting-item">
+              <span class="setting-label">Enable Stars</span>
+              <div class="toggle-switch active" id="starsToggle"></div>
+            </div>
+            <div class="setting-item">
               <span class="setting-label">Pipe Spacing</span>
               <div class="setting-input">
                 <input type="number" id="pipeSpacingInput" min="150" max="500" step="10" value="250">
@@ -1045,6 +1053,8 @@
     const menuBtn = document.getElementById('menuBtn');
     const menuModal = document.getElementById('menuModal');
     const pipesToggle = document.getElementById('pipesToggle');
+    const cityscapeToggle = document.getElementById('cityscapeToggle');
+    const starsToggle = document.getElementById('starsToggle');
     const mainMenuScreen = document.getElementById('mainMenuScreen');
     const howToPlayScreen = document.getElementById('howToPlayScreen');
     const settingsScreen = document.getElementById('settingsScreen');
@@ -1080,6 +1090,8 @@
     // Game state
     let gameState = 'paused'; // 'paused', 'playing', 'falling', 'gameover'
     let pipesEnabled = true; // Setting to enable/disable pipes
+    let cityscapeEnabled = true; // Setting to enable/disable cityscape
+    let starsEnabled = true; // Setting to enable/disable stars
     let maxLives = 1; // Default number of lives
     let currentLives = 1; // Current lives remaining
     let ghostDuration = 3000; // Default ghost duration in milliseconds (3 seconds)
@@ -1870,45 +1882,49 @@
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Parallax stars - use backgroundOffset for smooth parallax effect (more subtle)
-      ctx.fillStyle = 'rgba(0, 245, 255, 0.4)'; // Reduced opacity for stars
-      ctx.shadowColor = 'rgba(0, 245, 255, 0.3)';
-      ctx.shadowBlur = 3; // Reduced glow
-      const wrapWidth = canvas.width + 200; // Match the wrap width used for backgroundOffset
-      
-      // Initialize star positions if not already done
-      if (starPositions.length === 0) {
-        initializeStarPositions();
-      }
-      
-      // Pre-calculate offset once
-      const offsetMod = backgroundOffset % wrapWidth;
-      const offsetModNeg = offsetMod < 0 ? offsetMod + wrapWidth : offsetMod;
-      
-      // Batch star drawing for better performance
-      ctx.beginPath();
-      for (let i = 0; i < starPositions.length; i++) {
-        const star = starPositions[i];
-        // Calculate current position with offset, ensuring smooth wrapping
-        let x = star.baseX - offsetModNeg;
-        // Handle wrapping for negative values - use proper modulo to maintain continuity
-        if (x < 0) {
-          x = x + wrapWidth;
-        } else if (x >= wrapWidth) {
-          x = x - wrapWidth;
+      if (starsEnabled) {
+        ctx.fillStyle = 'rgba(0, 245, 255, 0.4)'; // Reduced opacity for stars
+        ctx.shadowColor = 'rgba(0, 245, 255, 0.3)';
+        ctx.shadowBlur = 3; // Reduced glow
+        const wrapWidth = canvas.width + 200; // Match the wrap width used for backgroundOffset
+        
+        // Initialize star positions if not already done
+        if (starPositions.length === 0) {
+          initializeStarPositions();
         }
-        // Only draw if visible on canvas (with some margin for smooth scrolling)
-        if (x >= -50 && x <= canvas.width + 50) {
-          // Simplified size calculation (cache sin values or use simpler formula)
-          const size = 2 + (i % 3); // Simpler: 2, 3, or 4 based on index
-          ctx.moveTo(x + size, star.y);
-          ctx.arc(x, star.y, size, 0, Math.PI * 2);
+        
+        // Pre-calculate offset once
+        const offsetMod = backgroundOffset % wrapWidth;
+        const offsetModNeg = offsetMod < 0 ? offsetMod + wrapWidth : offsetMod;
+        
+        // Batch star drawing for better performance
+        ctx.beginPath();
+        for (let i = 0; i < starPositions.length; i++) {
+          const star = starPositions[i];
+          // Calculate current position with offset, ensuring smooth wrapping
+          let x = star.baseX - offsetModNeg;
+          // Handle wrapping for negative values - use proper modulo to maintain continuity
+          if (x < 0) {
+            x = x + wrapWidth;
+          } else if (x >= wrapWidth) {
+            x = x - wrapWidth;
+          }
+          // Only draw if visible on canvas (with some margin for smooth scrolling)
+          if (x >= -50 && x <= canvas.width + 50) {
+            // Simplified size calculation (cache sin values or use simpler formula)
+            const size = 2 + (i % 3); // Simpler: 2, 3, or 4 based on index
+            ctx.moveTo(x + size, star.y);
+            ctx.arc(x, star.y, size, 0, Math.PI * 2);
+          }
         }
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
-      ctx.fill();
-      ctx.shadowBlur = 0;
       
       // Draw cityscape (between stars and pipes for parallax effect)
-      drawCityscape();
+      if (cityscapeEnabled) {
+        drawCityscape();
+      }
     }
     
     // Draw cityscape
@@ -2536,6 +2552,22 @@
       localStorage.setItem('pipesEnabled', pipesEnabled.toString());
     }
 
+    // Toggle cityscape
+    function toggleCityscape() {
+      cityscapeEnabled = !cityscapeEnabled;
+      cityscapeToggle.classList.toggle('active', cityscapeEnabled);
+      // Save to localStorage
+      localStorage.setItem('cityscapeEnabled', cityscapeEnabled.toString());
+    }
+
+    // Toggle stars
+    function toggleStars() {
+      starsEnabled = !starsEnabled;
+      starsToggle.classList.toggle('active', starsEnabled);
+      // Save to localStorage
+      localStorage.setItem('starsEnabled', starsEnabled.toString());
+    }
+
     // Update pipe settings
     function updatePipeSettings() {
       pipeSpacing = parseInt(pipeSpacingInput.value) || DEFAULT_PIPE_SPACING;
@@ -2596,6 +2628,8 @@
     // Reset all settings to defaults
     function resetAllSettings() {
       pipesEnabled = true;
+      cityscapeEnabled = true;
+      starsEnabled = true;
       pipeSpacing = DEFAULT_PIPE_SPACING;
       pipeGap = DEFAULT_PIPE_GAP;
       pipeSpeed = DEFAULT_PIPE_SPEED;
@@ -2604,6 +2638,8 @@
       
       // Update UI
       pipesToggle.classList.add('active');
+      cityscapeToggle.classList.add('active');
+      starsToggle.classList.add('active');
       pipeSpacingInput.value = DEFAULT_PIPE_SPACING;
       pipeGapInput.value = DEFAULT_PIPE_GAP;
       pipeSpeedInput.value = DEFAULT_PIPE_SPEED;
@@ -2619,6 +2655,8 @@
       
       // Save to localStorage
       localStorage.setItem('pipesEnabled', 'true');
+      localStorage.setItem('cityscapeEnabled', 'true');
+      localStorage.setItem('starsEnabled', 'true');
       localStorage.setItem('pipeSpacing', DEFAULT_PIPE_SPACING.toString());
       localStorage.setItem('pipeGap', DEFAULT_PIPE_GAP.toString());
       localStorage.setItem('pipeSpeed', DEFAULT_PIPE_SPEED.toString());
@@ -2632,6 +2670,18 @@
       if (savedPipes !== null) {
         pipesEnabled = savedPipes === 'true';
         pipesToggle.classList.toggle('active', pipesEnabled);
+      }
+      
+      const savedCityscape = localStorage.getItem('cityscapeEnabled');
+      if (savedCityscape !== null) {
+        cityscapeEnabled = savedCityscape === 'true';
+        cityscapeToggle.classList.toggle('active', cityscapeEnabled);
+      }
+      
+      const savedStars = localStorage.getItem('starsEnabled');
+      if (savedStars !== null) {
+        starsEnabled = savedStars === 'true';
+        starsToggle.classList.toggle('active', starsEnabled);
       }
       
       const savedSpacing = localStorage.getItem('pipeSpacing');
@@ -2790,6 +2840,8 @@
     backFromHowToPlay.addEventListener('click', showMainMenu);
     backFromSettings.addEventListener('click', showMainMenu);
     pipesToggle.addEventListener('click', togglePipes);
+    cityscapeToggle.addEventListener('click', toggleCityscape);
+    starsToggle.addEventListener('click', toggleStars);
     pipeSpacingInput.addEventListener('change', updatePipeSettings);
     pipeSpacingInput.addEventListener('input', updatePipeSettings);
     pipeGapInput.addEventListener('change', updatePipeSettings);
