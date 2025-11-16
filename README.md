@@ -10,12 +10,36 @@ A cyberpunk-themed Flappy Bird game with neon visuals, smooth animations, and cu
 ## 📸 Screenshots
 
 <div align="center">
-  <img src="screenshots/gameplay.png" alt="Gameplay Screenshot" width="400"/>
+  
+  **Main Gameplay**
+  
+  <img src="screenshots/gameplay.png" alt="Gameplay Screenshot" width="600"/>
+  
   <br/><br/>
-  <img src="screenshots/mobile.png" alt="Mobile View" width="300"/>
-  <img src="screenshots/settings-1.png" alt="Settings Menu 1" width="300"/>
-  <img src="screenshots/settings-2.png" alt="Settings Menu 2" width="300"/>
-  <img src="screenshots/lose-game.png" alt="Game Over Screen" width="300"/>
+  
+  **Additional Views**
+  
+  <table>
+    <tr>
+      <td align="center">
+        <img src="screenshots/mobile.png" alt="Mobile View" width="200"/><br/>
+        <sub>Mobile View</sub>
+      </td>
+      <td align="center">
+        <img src="screenshots/settings-1.png" alt="Settings Menu 1" width="200"/><br/>
+        <sub>Settings Menu 1</sub>
+      </td>
+      <td align="center">
+        <img src="screenshots/settings-2.png" alt="Settings Menu 2" width="200"/><br/>
+        <sub>Settings Menu 2</sub>
+      </td>
+      <td align="center">
+        <img src="screenshots/lose-game.png" alt="Game Over Screen" width="200"/><br/>
+        <sub>Game Over</sub>
+      </td>
+    </tr>
+  </table>
+  
 </div>
 
 ## 🎮 Features
