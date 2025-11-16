@@ -428,6 +428,158 @@
       color: rgba(0, 245, 255, 0.7);
       font-weight: normal;
     }
+    .medals-display {
+      position: fixed;
+      bottom: 40px;
+      left: 80px;
+      z-index: 100;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .medals-display::before {
+      content: '[MEDALS]';
+      color: rgba(0, 245, 255, 0.5);
+      font-size: 12px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .medal-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(150, 150, 150, 0.6);
+    }
+    .medal-item.earned {
+      color: rgba(0, 245, 255, 0.8);
+    }
+    .medal-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      text-align: center;
+      line-height: 1;
+      text-shadow: 0 0 4px currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
+    .medal-icon.bronze {
+      background: linear-gradient(135deg, #cd7f32 0%, #8b5a2b 100%);
+      color: #fff;
+      box-shadow: 0 0 8px rgba(205, 127, 50, 0.6);
+    }
+    .medal-icon.silver {
+      background: linear-gradient(135deg, #c0c0c0 0%, #808080 100%);
+      color: #fff;
+      box-shadow: 0 0 8px rgba(192, 192, 192, 0.6);
+    }
+    .medal-icon.gold {
+      background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+      color: #fff;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+    }
+    .medal-icon.ultra {
+      background: linear-gradient(135deg, #9d4edd 0%, #5a189a 100%);
+      color: #fff;
+      box-shadow: 0 0 8px rgba(157, 78, 221, 0.6);
+    }
+    .medal-icon.unearned {
+      opacity: 0.3;
+      filter: grayscale(0.5);
+    }
+    .medal-icon.unearned.bronze {
+      box-shadow: 0 0 4px rgba(205, 127, 50, 0.2);
+    }
+    .medal-icon.unearned.silver {
+      box-shadow: 0 0 4px rgba(192, 192, 192, 0.2);
+    }
+    .medal-icon.unearned.gold {
+      box-shadow: 0 0 4px rgba(255, 215, 0, 0.2);
+    }
+    .medal-icon.unearned.ultra {
+      box-shadow: 0 0 4px rgba(157, 78, 221, 0.2);
+    }
+    .medal-notification {
+      position: fixed;
+      top: 20px;
+      right: 80px;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid;
+      padding: 12px 16px;
+      border-radius: 6px;
+      text-align: center;
+      font-family: 'Share Tech Mono', monospace;
+      display: none;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 0 20px currentColor;
+      animation: medalSlideIn 0.4s ease-out;
+      pointer-events: none;
+      max-width: 250px;
+    }
+    .medal-notification.show {
+      display: flex;
+    }
+    .medal-notification.bronze {
+      border-color: #cd7f32;
+      color: #cd7f32;
+    }
+    .medal-notification.silver {
+      border-color: #c0c0c0;
+      color: #c0c0c0;
+    }
+    .medal-notification.gold {
+      border-color: #ffd700;
+      color: #ffd700;
+    }
+    .medal-notification.ultra {
+      border-color: #9d4edd;
+      color: #9d4edd;
+    }
+    .medal-notification-title {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-shadow: 0 0 8px currentColor;
+      white-space: nowrap;
+    }
+    .medal-notification-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      text-shadow: 0 0 6px currentColor;
+      box-shadow: 0 0 12px currentColor;
+      flex-shrink: 0;
+    }
+    .medal-notification-text {
+      font-size: 11px;
+      opacity: 0.8;
+      white-space: nowrap;
+    }
+    @keyframes medalSlideIn {
+      0% {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      100% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
     #gameOver {
       position: absolute;
       top: 0;
@@ -876,6 +1028,26 @@
         right: 15px;
         font-size: 12px;
       }
+      .medals-display {
+        bottom: 15px;
+        left: 15px;
+        flex-direction: row;
+        gap: 8px;
+      }
+      .medals-display::before {
+        display: none;
+      }
+      .medal-item {
+        margin: 0;
+      }
+      .medal-item span {
+        display: none;
+      }
+      .medal-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 14px;
+      }
       .code-stream, .text-artifacts {
         display: none;
       }
@@ -1075,9 +1247,13 @@
                 <span style="color: #00f5ff; font-family: 'Share Tech Mono', monospace;">ms</span>
               </div>
             </div>
-            <div class="setting-item" style="border-bottom: none; padding-bottom: 0;">
+            <div class="setting-item">
               <span class="setting-label">High Score</span>
               <button class="reset-highscore" id="resetHighscore">RESET</button>
+            </div>
+            <div class="setting-item" style="border-bottom: none; padding-bottom: 0;">
+              <span class="setting-label">Medals</span>
+              <button class="reset-highscore" id="resetMedals">RESET</button>
             </div>
             <button class="reset-settings" id="resetSettings">RESET ALL SETTINGS</button>
           </div>
@@ -1098,11 +1274,24 @@
   <div class="high-score-system">
     HIGH SCORE: <strong id="highscore">0</strong>
   </div>
+  <div class="medals-display" id="medalsDisplay"></div>
+  <div class="medal-notification" id="medalNotification">
+    <div class="medal-notification-icon" id="medalNotificationIcon">🏅</div>
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <div class="medal-notification-title" id="medalNotificationTitle">MEDAL EARNED</div>
+      <div class="medal-notification-text" id="medalNotificationText"></div>
+    </div>
+  </div>
   <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
     const scoreEl = document.getElementById('score');
     const highscoreEl = document.getElementById('highscore');
+    const medalsDisplay = document.getElementById('medalsDisplay');
+    const medalNotification = document.getElementById('medalNotification');
+    const medalNotificationIcon = document.getElementById('medalNotificationIcon');
+    const medalNotificationTitle = document.getElementById('medalNotificationTitle');
+    const medalNotificationText = document.getElementById('medalNotificationText');
     const restartBtn = document.getElementById('restart');
     const gameOverEl = document.getElementById('gameOver');
     const finalScoreEl = document.getElementById('finalScore');
@@ -1128,6 +1317,7 @@
     const ghostDurationInput = document.getElementById('ghostDurationInput');
     const resetSettingsBtn = document.getElementById('resetSettings');
     const resetHighscoreBtn = document.getElementById('resetHighscore');
+    const resetMedalsBtn = document.getElementById('resetMedals');
 
     // Game constants
     const GRAVITY = 0.5;
@@ -1174,6 +1364,30 @@
     const savedHighscore = localStorage.getItem('highscore');
     if (savedHighscore !== null && !isNaN(parseInt(savedHighscore))) {
       highscore = parseInt(savedHighscore);
+    }
+    
+    // Medal system
+    const MEDAL_THRESHOLDS = {
+      bronze: 10,
+      silver: 50,
+      gold: 100,
+      ultra: 200
+    };
+    let medals = {
+      bronze: false,
+      silver: false,
+      gold: false,
+      ultra: false
+    };
+    
+    // Load medals from localStorage
+    const savedMedals = localStorage.getItem('medals');
+    if (savedMedals) {
+      try {
+        medals = JSON.parse(savedMedals);
+      } catch (e) {
+        console.warn('Failed to load medals:', e);
+      }
     }
     let frameCount = 0;
     let animationFrame = 0;
@@ -1514,6 +1728,38 @@
         setTimeout(() => {
           this.playTone(300, 0.15, 'sine', 0.3);
         }, 200);
+      },
+      
+      async playMedal() {
+        await this.ensureResumed();
+        // Xbox-style achievement sound - layered triumphant chime
+        const now = this.audioContext.currentTime;
+        
+        // Main ascending chord progression with harmonics
+        // First note - C5 with slight harmonic
+        this.playTone(523.25, 0.2, 'sine', 0.3); // C5
+        setTimeout(() => {
+          this.playTone(1046.5, 0.15, 'sine', 0.15); // C6 (octave harmonic)
+        }, 50);
+        
+        // Second note - E5
+        setTimeout(() => {
+          this.playTone(659.25, 0.2, 'sine', 0.3); // E5
+        }, 120);
+        
+        // Third note - G5 with fuller sound
+        setTimeout(() => {
+          this.playTone(783.99, 0.25, 'sine', 0.35); // G5
+          // Add octave harmonic for richness
+          setTimeout(() => {
+            this.playTone(1567.98, 0.15, 'sine', 0.2); // G6
+          }, 50);
+        }, 240);
+        
+        // Final high note for impact
+        setTimeout(() => {
+          this.playTone(1046.5, 0.3, 'sine', 0.4); // C6 - sustained final note
+        }, 400);
       }
     };
 
@@ -2561,6 +2807,104 @@
         localStorage.setItem('highscore', highscore.toString());
       }
       highscoreEl.textContent = highscore;
+      
+      // Check for medal achievements
+      checkMedals();
+    }
+    
+    // Check and award medals
+    function checkMedals() {
+      const medalTypes = ['bronze', 'silver', 'gold', 'ultra'];
+      
+      medalTypes.forEach(type => {
+        if (!medals[type] && score >= MEDAL_THRESHOLDS[type]) {
+          medals[type] = true;
+          localStorage.setItem('medals', JSON.stringify(medals));
+          showMedalNotification(type);
+          updateMedalsDisplay();
+        }
+      });
+    }
+    
+    // Show medal notification
+    function showMedalNotification(type) {
+      const medalNames = {
+        bronze: 'BRONZE MEDAL',
+        silver: 'SILVER MEDAL',
+        gold: 'GOLD MEDAL',
+        ultra: 'ULTRA MEDAL'
+      };
+      
+      const medalEmojis = {
+        bronze: '🥉',
+        silver: '🥈',
+        gold: '🥇',
+        ultra: '💜'
+      };
+      
+      const medalTexts = {
+        bronze: `Score ${MEDAL_THRESHOLDS.bronze} points`,
+        silver: `Score ${MEDAL_THRESHOLDS.silver} points`,
+        gold: `Score ${MEDAL_THRESHOLDS.gold} points`,
+        ultra: `Score ${MEDAL_THRESHOLDS.ultra} points`
+      };
+      
+      // Remove all medal classes
+      medalNotification.classList.remove('bronze', 'silver', 'gold', 'ultra');
+      // Add the appropriate class
+      medalNotification.classList.add(type);
+      
+      medalNotificationIcon.className = `medal-notification-icon ${type}`;
+      medalNotificationIcon.textContent = medalEmojis[type];
+      medalNotificationTitle.textContent = medalNames[type];
+      medalNotificationText.textContent = medalTexts[type];
+      
+      // Play medal sound
+      SoundManager.playMedal();
+      
+      // Show notification
+      medalNotification.classList.add('show');
+      
+      // Hide after 3 seconds
+      setTimeout(() => {
+        medalNotification.classList.remove('show');
+      }, 3000);
+    }
+    
+    // Update medals display
+    function updateMedalsDisplay() {
+      medalsDisplay.innerHTML = '';
+      
+      const medalEmojis = {
+        bronze: '🥉',
+        silver: '🥈',
+        gold: '🥇',
+        ultra: '💜'
+      };
+      
+      const medalList = [
+        { type: 'bronze', name: 'Bronze', threshold: MEDAL_THRESHOLDS.bronze },
+        { type: 'silver', name: 'Silver', threshold: MEDAL_THRESHOLDS.silver },
+        { type: 'gold', name: 'Gold', threshold: MEDAL_THRESHOLDS.gold },
+        { type: 'ultra', name: 'Ultra', threshold: MEDAL_THRESHOLDS.ultra }
+      ];
+      
+      medalList.forEach(medal => {
+        const medalItem = document.createElement('div');
+        medalItem.className = `medal-item ${medals[medal.type] ? 'earned' : ''}`;
+        
+        const medalIcon = document.createElement('div');
+        const isEarned = medals[medal.type];
+        medalIcon.className = `medal-icon ${medal.type}${!isEarned ? ' unearned' : ''}`;
+        medalIcon.textContent = medalEmojis[medal.type];
+        
+        const medalLabel = document.createElement('span');
+        medalLabel.textContent = `${medal.name} (${medal.threshold})`;
+        
+        medalItem.appendChild(medalIcon);
+        medalItem.appendChild(medalLabel);
+        medalsDisplay.appendChild(medalItem);
+      });
     }
 
     // Start game
@@ -2726,6 +3070,18 @@
       highscore = 0;
       localStorage.removeItem('highscore');
       highscoreEl.textContent = highscore;
+    }
+    
+    // Reset medals
+    function resetMedals() {
+      medals = {
+        bronze: false,
+        silver: false,
+        gold: false,
+        ultra: false
+      };
+      localStorage.removeItem('medals');
+      updateMedalsDisplay();
     }
 
     // Reset all settings to defaults
@@ -3066,6 +3422,7 @@
     // Initialize button states
     updateInputButtonStates();
     resetHighscoreBtn.addEventListener('click', resetHighscore);
+    resetMedalsBtn.addEventListener('click', resetMedals);
     resetSettingsBtn.addEventListener('click', resetAllSettings);
     
     // Close menu modal when clicking outside
@@ -3178,6 +3535,9 @@
 
     // Initialize high score display on page load
     highscoreEl.textContent = highscore;
+    
+    // Initialize medals display on page load
+    updateMedalsDisplay();
 
     // Start game loop
     gameLoop();
